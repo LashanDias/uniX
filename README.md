@@ -6,6 +6,6 @@ Comprehensive mobile application prototype designed exclusively for university s
 * **main** - Stable production-ready branch
 * **jakshi** - Feature branch for Jakshi
 * **malshi** - Feature branch for Malshi
-* **maangi** - Feature branch for Amaangi
+* **Amaangi** - Feature branch for Amaangi
 * **sandupama** - Feature branch for Sandupama
 * **lasitha** - Feature branch for Lasitha
