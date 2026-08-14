@@ -3,7 +3,7 @@
 Comprehensive mobile application prototype designed exclusively for university students to manage campus marketplace, housing, tickets, and student hub utilities.
 
 ## Team Branches
-* **main** - Stable production-ready branch
+* **Lashan** - Stable production-ready branch
 * **jakshi** - Feature branch for Jakshi
 * **malshi** - Feature branch for Malshi
 * **Amaangi** - Feature branch for Amaangi
