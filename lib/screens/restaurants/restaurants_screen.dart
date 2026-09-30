@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/restaurant.dart';
 import '../../widgets/app_back_button.dart';
+import '../../services/restaurant_catalog.dart';
 import '../../services/restaurant_store.dart';
 import 'add_restaurant_screen.dart';
 import 'restaurant_detail_screen.dart';
@@ -42,16 +43,27 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
       _failed = false;
     });
     try {
-      final places = await _store.load();
-      final saved = await _store.savedIds();
+      final result = await _store.loadAll();
       if (mounted) {
         setState(() {
-          _places = places;
-          _saved = saved;
+          _places = result.places;
+          _saved = result.saved;
+          // Only the student's own additions and saved marks are missing;
+          // the catalogue below is still complete, so this is a note rather
+          // than a reason to show an empty screen.
+          _failed = result.storageFailed;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _failed = true);
+      // The catalogue is compiled into the app, so fall back to it rather
+      // than leaving the student with nothing.
+      if (mounted) {
+        setState(() {
+          _places = restaurantCatalog;
+          _saved = <String>{};
+          _failed = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

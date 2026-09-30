@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
@@ -50,6 +51,7 @@ class UnixApp extends StatelessWidget {
     return MaterialApp(
       title: 'UNIX Mobile',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const AppScrollBehavior(),
       theme: AppTheme.lightTheme,
       home: const AuthGate(),
       onGenerateRoute: (settings) {
@@ -253,4 +255,23 @@ class _StartupSplash extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Lets a mouse drag any scrollable, not just a finger.
+///
+/// Flutter leaves mouse dragging off by default, so on the web the horizontal
+/// strips -- Quick Access, the restaurant filters, the notice board
+/// categories -- looked scrollable but would not move when dragged. Set on
+/// MaterialApp so every scrollable in the app behaves the same way.
+class AppScrollBehavior extends MaterialScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.invertedStylus,
+  };
 }

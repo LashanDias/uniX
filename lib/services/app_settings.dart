@@ -66,8 +66,9 @@ class AppSettings {
           toggle.key:
               prefs.getBool('$_prefix${toggle.key}') ?? toggle.defaultValue,
       };
-    } catch (_) {
+    } catch (error, stack) {
       // Keep the defaults; settings are a convenience, not a blocker.
+      debugPrint('AppSettings.load failed: $error\n$stack');
     }
   }
 
@@ -84,8 +85,9 @@ class AppSettings {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('$_prefix$key', value);
-    } catch (_) {
+    } catch (error, stack) {
       // The in-memory value still applies for this session.
+      debugPrint('AppSettings.set failed: $error\n$stack');
     }
   }
 }
