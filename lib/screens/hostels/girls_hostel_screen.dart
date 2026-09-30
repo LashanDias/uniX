@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/girls_hostel_inventory.dart';
 import '../../widgets/app_back_button.dart';
 
 class GirlsHostelScreen extends StatefulWidget {
@@ -14,15 +15,11 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
   DateTimeRange? _dates;
   bool _checked = false;
   bool _saving = false;
-  int _floor = 2;
-  static const _floors = [
-    'Ground Floor',
-    '1st Floor',
-    '2nd Floor',
-    '3rd Floor',
-  ];
+  int _floor = 0;
+
   String _date(DateTime date) =>
       MaterialLocalizations.of(context).formatMediumDate(date);
+
   int get _nights => _dates == null
       ? 0
       : DateTime.utc(_dates!.end.year, _dates!.end.month, _dates!.end.day)
@@ -61,15 +58,17 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
     });
   }
 
-  Future<void> _saveRequest(String room) async {
+  Future<void> _saveRequest(HostelRoom room) async {
     setState(() => _saving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final drafts = prefs.getStringList('hostel.bookingDrafts.v1') ?? [];
       final draft = jsonEncode({
         'hostel': 'Girls Hostel • HUB 02',
-        'room': room,
-        'floor': _floors[_floor],
+        'room': room.number,
+        'floor': room.floorLabel,
+        'sharing': room.sharing,
+        'pricePerMonth': room.monthlyPrice,
         'checkIn': _dates!.start.toIso8601String(),
         'checkOut': _dates!.end.toIso8601String(),
         'status': 'Draft',
@@ -86,7 +85,12 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Booking draft saved'),
           content: Text(
-            'Room $room\n${_date(_dates!.start)} – ${_date(_dates!.end)}\n$_nights nights\n\nSaved on this device. No room has been reserved and no payment has been taken.',
+            'Room ${room.number} • ${room.typeLabel}\n'
+            '${room.floorLabel}\n'
+            '${_date(_dates!.start)} – ${_date(_dates!.end)}\n'
+            '$_nights nights • LKR ${room.monthlyPrice} / month\n\n'
+            'Saved on this device. No room has been reserved and no payment '
+            'has been taken.',
           ),
           actions: [
             TextButton(
@@ -109,182 +113,338 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
     }
   }
 
+  void _checkAvailability() {
+    if (_nights < 1 || _nights > 90) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose a stay between 1 and 90 nights.')),
+      );
+      return;
+    }
+    setState(() => _checked = true);
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: const AppBackButton(),
-      title: const Text('Girls Hostel'),
-    ),
-    body: SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEAF1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.apartment, size: 48, color: AppColors.primary),
-                    SizedBox(height: 12),
-                    Text(
-                      'HUB 02 • Girls Hostel',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text('60+ rooms for students • 2, 4 and 6-sharing rooms'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Select stay dates',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _saving ? null : _chooseDates,
-                icon: const Icon(Icons.date_range),
-                label: Text(
-                  _dates == null
-                      ? 'Choose your dates'
-                      : '${_date(_dates!.start)} – ${_date(_dates!.end)}',
-                ),
-              ),
-              if (_dates != null)
-                Text('Your stay: $_nights nights • Maximum 90 nights'),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _dates == null || _saving
-                    ? null
-                    : () {
-                        if (_nights < 1 || _nights > 90) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Choose a stay between 1 and 90 nights.',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        setState(() => _checked = true);
-                      },
-                child: const Text('Check availability'),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Room details below are from your supplied reference. Live availability and booking are not connected.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Choose a floor',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: List.generate(
-                  4,
-                  (index) => ChoiceChip(
-                    label: Text(_floors[index]),
-                    selected: _floor == index,
-                    onSelected: _saving
-                        ? null
-                        : (_) => setState(() => _floor = index),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text('${_floors[_floor]} • 2, 4 and 6-sharing rooms for girls'),
-              const SizedBox(height: 20),
-              if (!_checked)
+  Widget build(BuildContext context) {
+    final rooms = GirlsHostelInventory.roomsOn(_floor);
+    final free = rooms.where((room) => !room.isFull).length;
+    return Scaffold(
+      appBar: AppBar(
+        leading: const AppBackButton(),
+        title: const Text('Girls Hostel'),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                const _BuildingHeader(),
+                const SizedBox(height: 24),
                 const Text(
-                  'Select your dates and check availability to view room details.',
-                )
-              else if (_floor != 2)
-                const Text(
-                  'Room details for this floor are pending. Select 2nd Floor to view the reference rooms.',
-                )
-              else ...[
-                const Text(
-                  'Reference rooms • Availability needs confirmation',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  'Select stay dates',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                for (final room in [
-                  ('0207', 2),
-                  ('0208', 3),
-                  ('0209', 1),
-                  ('0210', 2),
-                ])
-                  Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: 20,
-                            runSpacing: 12,
-                            alignment: WrapAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Room ${room.$1}',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Text(
-                                'LKR 9,500.00 / room',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '${room.$2} ${room.$2 == 1 ? 'bed' : 'beds'} shown in reference • 4 guests',
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            '100% deposit • Non-refundable • Maximum 90 nights',
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Pricing period and current availability must be confirmed with the hostel.',
-                          ),
-                          const SizedBox(height: 16),
-                          OutlinedButton.icon(
-                            onPressed: _saving
-                                ? null
-                                : () => _saveRequest(room.$1),
-                            icon: const Icon(Icons.bookmark_add_outlined),
-                            label: const Text('Save booking draft'),
-                          ),
-                        ],
-                      ),
-                    ),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _chooseDates,
+                  icon: const Icon(Icons.date_range),
+                  label: Text(
+                    _dates == null
+                        ? 'Choose your dates'
+                        : '${_date(_dates!.start)} – ${_date(_dates!.end)}',
                   ),
+                ),
+                if (_dates != null) ...[
+                  const SizedBox(height: 8),
+                  Text('Your stay: $_nights nights • Maximum 90 nights'),
+                ],
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _dates == null || _saving
+                      ? null
+                      : _checkAvailability,
+                  child: const Text('Check availability'),
+                ),
+                const SizedBox(height: 24),
+                const _PricingTable(),
+                const SizedBox(height: 24),
+                const Text(
+                  'Choose a floor',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (var index = 0;
+                        index < GirlsHostelInventory.floors.length;
+                        index++)
+                      ChoiceChip(
+                        label: Text(GirlsHostelInventory.floors[index]),
+                        selected: _floor == index,
+                        onSelected: _saving
+                            ? null
+                            : (_) => setState(() => _floor = index),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${GirlsHostelInventory.floors[_floor]} • '
+                  '${GirlsHostelInventory.roomsPerFloor} rooms '
+                  '(${GirlsHostelInventory.sixSharingPerFloor} six-sharing, '
+                  '${GirlsHostelInventory.fourSharingPerFloor} four-sharing)',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 20),
+                if (!_checked)
+                  const Text(
+                    'Select your dates and check availability to view rooms.',
+                  )
+                else ...[
+                  Text(
+                    '$free of ${rooms.length} rooms have free beds',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final room in rooms)
+                    _RoomCard(
+                      room: room,
+                      nights: _nights,
+                      saving: _saving,
+                      onSave: () => _saveRequest(room),
+                    ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BuildingHeader extends StatelessWidget {
+  const _BuildingHeader();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFEAF1),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.apartment, size: 48, color: AppColors.primary),
+        const SizedBox(height: 12),
+        const Text(
+          'HUB 02 • Girls Hostel',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Spacious building with ${GirlsHostelInventory.totalRooms} rooms '
+          'reserved for students, across '
+          '${GirlsHostelInventory.floors.length} floors.',
+        ),
+        const SizedBox(height: 4),
+        const Text('4-sharing and 6-sharing rooms for girls.'),
+      ],
+    ),
+  );
+}
+
+/// Monthly, weekly and daily rates for each room type.
+class _PricingTable extends StatelessWidget {
+  const _PricingTable();
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Room rates',
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 4),
+      const Text(
+        'Prices are per room, not per bed.',
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      ),
+      const SizedBox(height: 12),
+      // Wrap so the two cards sit side by side on a tablet and stack on a
+      // phone instead of overflowing.
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final twoUp = constraints.maxWidth > 520;
+          final cardWidth = twoUp
+              ? (constraints.maxWidth - 12) / 2
+              : constraints.maxWidth;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final sharing in [4, 6])
+                SizedBox(
+                  width: cardWidth,
+                  child: _RateCard(sharing: sharing),
+                ),
+            ],
+          );
+        },
+      ),
+    ],
+  );
+}
+
+class _RateCard extends StatelessWidget {
+  const _RateCard({required this.sharing});
+
+  final int sharing;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.cardBg,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$sharing-sharing',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        _rate('Per month', GirlsHostelInventory.monthlyPrice(sharing)),
+        _rate('Per week', GirlsHostelInventory.weeklyPrice(sharing)),
+        _rate('Per day', GirlsHostelInventory.dailyPrice(sharing)),
+      ],
+    ),
+  );
+
+  Widget _rate(String label, int amount) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'LKR $amount',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  );
+}
+
+class _RoomCard extends StatelessWidget {
+  const _RoomCard({
+    required this.room,
+    required this.nights,
+    required this.saving,
+    required this.onSave,
+  });
+
+  final HostelRoom room;
+  final int nights;
+  final bool saving;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 14),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: BorderSide(
+        color: room.isFull ? AppColors.border : AppColors.primary,
+      ),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: room.isFull ? AppColors.chipBg : AppColors.badgeGreen,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              room.bedsLabel,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: room.isFull
+                    ? AppColors.textSecondary
+                    : AppColors.badgeGreenText,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Wrap keeps the room number and price on one line when there is
+          // room and stacks them on a narrow phone.
+          Wrap(
+            spacing: 16,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                room.number,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'LKR ${room.monthlyPrice} / month',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${room.typeLabel} • ${room.floorLabel} • sleeps ${room.sharing}',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '100% deposit • Non-refundable • Maximum 90 nights',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: room.isFull
+                ? OutlinedButton(
+                    onPressed: null,
+                    child: const Text('Fully booked'),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: saving ? null : onSave,
+                    icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                    label: const Text('Book now'),
+                  ),
+          ),
+        ],
       ),
     ),
   );
