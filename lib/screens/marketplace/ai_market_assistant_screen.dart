@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../widgets/ai_hero_banner.dart';
 
 class AiMarketAssistantScreen extends StatefulWidget {
   const AiMarketAssistantScreen({super.key});
@@ -58,7 +59,12 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20.0),
                 children: [
-                  const _AssistantBanner(),
+                  const AiHeroBanner(
+                    title: 'Selling something? Ask me.',
+                    subtitle:
+                        'I can suggest a fair price, write your description '
+                        'and find similar items on campus.',
+                  ),
                   const SizedBox(height: 18),
                   ...messages.map((msg) {
                     bool isAi = msg['sender'] == 'ai';
@@ -191,60 +197,4 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
       ),
     );
   }
-}
-
-/// Robot hero at the top of the assistant, matching the CV matching screen.
-class _AssistantBanner extends StatelessWidget {
-  const _AssistantBanner();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: AppColors.primary,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    // The robot is dropped on a narrow phone, where it would squeeze the
-    // heading into a column of single words.
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        const copy = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Selling something? Ask me.',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'I can suggest a fair price, write your description and find '
-              'similar items on campus.',
-              style: TextStyle(color: Colors.white, height: 1.45),
-            ),
-          ],
-        );
-        if (constraints.maxWidth < 420) return copy;
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Expanded(child: copy),
-            const SizedBox(width: 12),
-            Image.asset(
-              'assets/images/ai_bot.png',
-              width: 100,
-              height: 100,
-              fit: BoxFit.contain,
-              // A missing asset must not break the banner.
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
-            ),
-          ],
-        );
-      },
-    ),
-  );
 }

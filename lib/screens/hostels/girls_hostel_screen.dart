@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/girls_hostel_inventory.dart';
 import '../../widgets/app_back_button.dart';
+import '../../widgets/safe_network_image.dart';
 
 class GirlsHostelScreen extends StatefulWidget {
   const GirlsHostelScreen({super.key});
@@ -178,9 +179,11 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    for (var index = 0;
-                        index < GirlsHostelInventory.floors.length;
-                        index++)
+                    for (
+                      var index = 0;
+                      index < GirlsHostelInventory.floors.length;
+                      index++
+                    )
                       ChoiceChip(
                         label: Text(GirlsHostelInventory.floors[index]),
                         selected: _floor == index,
@@ -229,30 +232,47 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
 class _BuildingHeader extends StatelessWidget {
   const _BuildingHeader();
 
+  /// Photo of the building, shown above the summary.
+  static const photoUrl =
+      'https://images.unsplash.com/photo-1555854877-bab0e564b8d5'
+      '?auto=format&fit=crop&w=900&q=80';
+
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(24),
+    clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
       color: const Color(0xFFFFEAF1),
       borderRadius: BorderRadius.circular(20),
     ),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(Icons.apartment, size: 48, color: AppColors.primary),
-        const SizedBox(height: 12),
-        const Text(
-          'HUB 02 • Girls Hostel',
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        const SafeNetworkImage(
+          url: photoUrl,
+          height: 150,
+          placeholderIcon: Icons.apartment,
+          placeholderLabel: 'HUB 02',
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Spacious building with ${GirlsHostelInventory.totalRooms} rooms '
-          'reserved for students, across '
-          '${GirlsHostelInventory.floors.length} floors.',
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'HUB 02 • Girls Hostel',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Spacious building with ${GirlsHostelInventory.totalRooms} rooms '
+                'reserved for students, across '
+                '${GirlsHostelInventory.floors.length} floors.',
+              ),
+              const SizedBox(height: 4),
+              const Text('4-sharing and 6-sharing rooms for girls.'),
+            ],
+          ),
         ),
-        const SizedBox(height: 4),
-        const Text('4-sharing and 6-sharing rooms for girls.'),
       ],
     ),
   );

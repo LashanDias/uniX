@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../widgets/ai_hero_banner.dart';
 import '../../services/recruitment_documents.dart';
 import '../../services/recruitment_store.dart';
 import '../../services/cv_comparison_service.dart';
@@ -271,57 +272,13 @@ class _RecruitmentWorkspaceScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  // The robot sits beside the copy when there is room and is
-                  // dropped entirely on a narrow phone, where a 110px image
-                  // would squeeze the heading into a column of single words.
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final copy = Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            widget.recruiterMode
-                                ? 'Find the skills your team needs.'
-                                : 'Your CV. Real requirements.',
-                            style: const TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Upload documents, review the text and compare the '
-                            'student CV with the HR brief.',
-                            style: TextStyle(color: Colors.white, height: 1.5),
-                          ),
-                        ],
-                      );
-                      if (constraints.maxWidth < 420) return copy;
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(child: copy),
-                          const SizedBox(width: 12),
-                          Image.asset(
-                            'assets/images/ai_bot.png',
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.contain,
-                            // A missing asset must not break the banner.
-                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                AiHeroBanner(
+                  title: widget.recruiterMode
+                      ? 'Find the skills your team needs.'
+                      : 'Your CV. Real requirements.',
+                  subtitle:
+                      'Upload documents, review the text and compare '
+                      'the student CV with the HR brief.',
                 ),
                 const SizedBox(height: 12),
                 const Text(

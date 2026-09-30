@@ -108,6 +108,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('View / edit my profile'), findsOneWidget);
+      // The hero banner carries artwork now, so this button can sit below the
+      // fold on a short screen; scroll to it as a user would.
+      await tester.ensureVisible(find.text('Upload HR requirements'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Upload HR requirements'));
       await tester.pumpAndSettle();
       for (final entry in {
