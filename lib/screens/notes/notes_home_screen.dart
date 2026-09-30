@@ -104,7 +104,20 @@ class _NotesHomeScreenState extends State<NotesHomeScreen> {
                   prefixIcon: Icon(Icons.search),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
+              // Study aid: condense a lecture PDF into revision notes.
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/short_notes'),
+                  icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+                  label: const Text('Make short notes from a PDF'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 46),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               if (sample)
                 Text(
                   snapshot.hasError

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
 import '../../services/notes_service.dart';
+import 'short_notes_screen.dart';
 
 class NoteDetailScreen extends StatelessWidget {
   final NoteItem note;
@@ -184,6 +185,24 @@ class NoteDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
+              // Condense this note's own text into revision notes.
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShortNotesScreen(
+                        initialText: note.description,
+                        initialTitle: note.title,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+                  label: const Text('Generate short notes'),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 46)),
+                ),
+              ),
               if (NotesService.canManageNote(note)) ...[
                 const SizedBox(height: 16),
                 OutlinedButton.icon(

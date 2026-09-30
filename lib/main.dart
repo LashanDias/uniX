@@ -13,6 +13,7 @@ import 'screens/auth/new_password_screen.dart';
 import 'screens/main_layout.dart';
 import 'screens/notes/notes_home_screen.dart';
 import 'screens/notes/upload_notes_screen.dart';
+import 'screens/notes/short_notes_screen.dart';
 import 'screens/notes/note_detail_screen.dart';
 import 'screens/marketplace/marketplace_screen.dart';
 import 'screens/marketplace/add_product_screen.dart';
@@ -71,6 +72,10 @@ class UnixApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const NotesHomeScreen());
           case '/upload_notes':
             return MaterialPageRoute(builder: (_) => const UploadNotesScreen());
+          case '/short_notes':
+            return MaterialPageRoute(
+              builder: (_) => const ShortNotesScreen(),
+            );
           case '/note_detail':
             final note = settings.arguments as NoteItem;
             return MaterialPageRoute(
