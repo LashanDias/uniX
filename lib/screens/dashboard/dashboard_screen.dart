@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/dashboard_search.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateTab;
@@ -58,26 +59,7 @@ class DashboardScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 18),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search notes, hostels, tickets, or gear...',
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.textLight,
-                      ),
-                      fillColor: const Color(0xFFF4F6F8),
-                      filled: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 13),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                  ),
+                  DashboardSearch(onNavigateTab: onNavigateTab),
                   const SizedBox(height: 14),
                   if (AuthService.isAdminEmail(
                     FirebaseAuth.instance.currentUser?.email,

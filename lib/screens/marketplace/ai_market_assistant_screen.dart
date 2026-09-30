@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/market_ai_service.dart';
 import '../../widgets/ai_hero_banner.dart';
 
 class AiMarketAssistantScreen extends StatefulWidget {
@@ -25,11 +26,15 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
     });
     _controller.clear();
 
+    // Brief pause so the reply does not appear before the question has been
+    // drawn. The mounted check matters: without it, leaving the screen inside
+    // this window calls setState on a disposed State and throws.
     Future.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
       setState(() {
         messages.add({
           'sender': 'ai',
-          'text': 'Based on market analysis, the suggested price for this item is Rs. 42,000 - 45,000.',
+          'text': MarketAiService.reply(text),
         });
       });
     });
