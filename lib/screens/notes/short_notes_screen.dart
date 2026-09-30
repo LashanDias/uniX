@@ -27,6 +27,7 @@ class _ShortNotesScreenState extends State<ShortNotesScreen> {
   bool _busy = false;
   String? _error;
   String? _sourceName;
+  final _pasted = TextEditingController();
 
   @override
   void initState() {
@@ -39,6 +40,26 @@ class _ShortNotesScreenState extends State<ShortNotesScreen> {
       );
       _sourceName = widget.initialTitle;
     }
+  }
+
+  @override
+  void dispose() {
+    _pasted.dispose();
+    super.dispose();
+  }
+
+  /// Condenses text the student pasted, with no file reading involved.
+  void _summarisePasted() {
+    final text = _pasted.text.trim();
+    if (text.isEmpty) {
+      setState(() => _error = 'Paste some text first, then tap Make notes.');
+      return;
+    }
+    setState(() {
+      _error = null;
+      _sourceName = 'Pasted text';
+      _notes = NoteSummarizer.generate(text, title: 'Short notes');
+    });
   }
 
   Future<void> _pickAndSummarise() async {
@@ -63,9 +84,14 @@ class _ShortNotesScreenState extends State<ShortNotesScreen> {
       });
     } on FormatException catch (error) {
       setState(() => _error = error.message);
-    } catch (_) {
+    } catch (error) {
+      // Naming the failure matters: PDF text extraction needs a rendering
+      // engine that is not always available in a browser, and a generic
+      // message left no way to tell that apart from a bad file.
       setState(
-        () => _error = 'Could not read that file. Try a PDF, DOCX or TXT.',
+        () => _error =
+            'Could not read that file ($error). '
+            'A DOCX or TXT usually works, or paste the text below.',
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -116,6 +142,12 @@ class _ShortNotesScreenState extends State<ShortNotesScreen> {
                   busy: _busy,
                   sourceName: _sourceName,
                   onPick: _busy ? null : _pickAndSummarise,
+                ),
+                const SizedBox(height: 14),
+                _PasteCard(
+                  controller: _pasted,
+                  onGenerate: _summarisePasted,
+                  busy: _busy,
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 14),
@@ -382,6 +414,66 @@ class _HandwrittenPage extends StatelessWidget {
       children: [
         Text('•  ', style: _hand),
         Expanded(child: Text(text, style: _hand)),
+      ],
+    ),
+  );
+}
+
+/// Paste-text alternative to picking a file.
+///
+/// Reading a PDF needs a rendering engine that is not always available in a
+/// browser, so this path always works: it goes straight to the summariser.
+class _PasteCard extends StatelessWidget {
+  const _PasteCard({
+    required this.controller,
+    required this.onGenerate,
+    required this.busy,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onGenerate;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: AppColors.cardBg,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Or paste your lecture text',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Copy from a slide, a PDF or a webpage and paste it here. This '
+          'always works, even when a file cannot be read.',
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: controller,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            hintText: 'Paste the lecture notes here...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: busy ? null : onGenerate,
+            icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+            label: const Text('Make notes from pasted text'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 46)),
+          ),
+        ),
       ],
     ),
   );

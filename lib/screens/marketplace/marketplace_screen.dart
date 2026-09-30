@@ -17,8 +17,18 @@ class MarketplaceScreen extends StatefulWidget {
 
 class _MarketplaceScreenState extends State<MarketplaceScreen> {
   String selectedCategory = 'All';
+  /// How long to wait for Firestore before showing the preview items.
+  ///
+  /// A Firestore stream that cannot reach the server neither emits nor errors,
+  /// it simply stays silent, so the screen spun forever on its spinner. After
+  /// this it falls back to the same preview list the error path already uses.
+  static const loadTimeout = Duration(seconds: 8);
+
   late final Stream<List<ProductItem>> products =
-      widget.productStream ?? MarketplaceService.watchProducts();
+      (widget.productStream ?? MarketplaceService.watchProducts()).timeout(
+        loadTimeout,
+        onTimeout: (sink) => sink.add(const <ProductItem>[]),
+      );
   String search = '';
   final Set<String> favoriteProducts = <String>{};
 

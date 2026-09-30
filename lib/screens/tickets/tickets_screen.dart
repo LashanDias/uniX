@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../widgets/safe_network_image.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -37,12 +38,18 @@ class _TicketsScreenState extends State<TicketsScreen> {
               'Talent Night 2026 - Early Bird Access',
               'Sep 18 • Main Auditorium',
               'LKR 750',
+              // A concert stage, so the card reads as a music event at a
+              // glance rather than as another block of text.
+              'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3'
+                  '?auto=format&fit=crop&w=900&q=80',
             ),
             const SizedBox(height: 14),
             _eventCard(
               'Tech Expo & Career Fair',
               'Sep 23 • Innovation Centre',
               'Free',
+              'https://images.unsplash.com/photo-1540575467063-178a50c2df87'
+                  '?auto=format&fit=crop&w=900&q=80',
             ),
           ],
         ],
@@ -69,54 +76,80 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ],
     ),
   );
-  Widget _eventCard(String title, String details, String price) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
+  Widget _eventCard(
+    String title,
+    String details,
+    String price,
+    String imageUrl,
+  ) => Card(
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SafeNetworkImage(
+          url: imageUrl,
+          height: 140,
+          placeholderIcon: Icons.confirmation_number_outlined,
+          placeholderLabel: title,
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.verified, color: AppColors.success),
-              SizedBox(width: 6),
-              // Flexible so the label ellipsises instead of
-              // overflowing the card on a narrow phone.
-              Flexible(
-                child: Text('Verified Ticket', overflow: TextOverflow.ellipsis),
+              const Row(
+                children: [
+                  Icon(Icons.verified, color: AppColors.success),
+                  SizedBox(width: 6),
+                  // Flexible so the label ellipsises instead of
+                  // overflowing the card on a narrow phone.
+                  Flexible(
+                    child: Text(
+                      'Verified Ticket',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 5),
-          Text(details, style: const TextStyle(color: AppColors.textSecondary)),
-          const SizedBox(height: 14),
-          // Wrap, not Row: the price and the button do not fit side
-          // by side on a small phone and must be allowed to stack.
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
+              const SizedBox(height: 12),
               Text(
-                price,
+                title,
                 style: const TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
                 ),
               ),
-              FilledButton(
-                onPressed: () => setState(() => _wallet = true),
-                child: const Text('Buy ticket'),
+              const SizedBox(height: 5),
+              Text(
+                details,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 14),
+              // Wrap, not Row: the price and the button do not fit side
+              // by side on a small phone and must be allowed to stack.
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  Text(
+                    price,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: () => setState(() => _wallet = true),
+                    child: const Text('Buy ticket'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
   Widget _ticketCard() => Container(

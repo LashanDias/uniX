@@ -68,11 +68,14 @@ class _RecruitmentWorkspaceScreenState
         _savedRequirements = requirements;
         if (requirements.isNotEmpty) _select(requirements.first);
       });
-    } catch (_) {
+    } catch (error) {
+      // Naming the cause matters: this fires whenever device storage cannot
+      // be read, and a message with no reason gave nothing to act on.
       if (mounted) {
         setState(
           () => _message =
-              'Could not load saved documents. You can still upload or paste text.',
+              'Could not load saved documents ($error). '
+              'You can still upload or paste text below.',
         );
       }
     } finally {
