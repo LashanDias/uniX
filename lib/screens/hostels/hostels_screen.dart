@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/boarding_store.dart';
+import 'boarding_screen.dart';
 import 'girls_hostel_screen.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/safe_network_image.dart';
@@ -47,7 +49,8 @@ class HostelsScreen extends StatelessWidget {
   static const wardenPhone = '0112 100 5000';
 
   /// Campus address shared by every hostel block.
-  static const campusAddress = 'SLTC Research University, Ingiriya Road, Padukka, Sri Lanka';
+  static const campusAddress =
+      'SLTC Research University, Ingiriya Road, Padukka, Sri Lanka';
 
   static const hostels = [
     HostelItem(
@@ -153,40 +156,48 @@ class _GenderChoiceBody extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          appBar: AppBar(leading: const AppBackButton(), title: Text(type)),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    type == 'Boarding'
-                        ? Icons.bed_outlined
-                        : Icons.house_outlined,
-                    size: 56,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '$type listings coming soon',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+        // Boarding has real listings now; Annex Houses does not yet.
+        builder: (_) => type == 'Boarding'
+            ? const BoardingScreen()
+            : type == 'Annex Houses'
+            ? const BoardingScreen(category: BoardingCategory.annex)
+            : Scaffold(
+                appBar: AppBar(
+                  leading: const AppBackButton(),
+                  title: Text(type),
+                ),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          type == 'Boarding'
+                              ? Icons.bed_outlined
+                              : Icons.house_outlined,
+                          size: 56,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '$type listings coming soon',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No listings have been added yet.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'No listings have been added yet.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -452,68 +463,67 @@ class HostelDetailsScreen extends StatelessWidget {
     // LayoutBuilder, not MediaQuery: we need the height actually granted to
     // the body, which is the window minus the app bar and any system insets.
     body: LayoutBuilder(
-      builder: (context, constraints) => _body(
-        compact: constraints.maxHeight < compactHeightBreakpoint,
-      ),
+      builder: (context, constraints) =>
+          _body(compact: constraints.maxHeight < compactHeightBreakpoint),
     ),
   );
 
   Widget _body({required bool compact}) => ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        children: [
-          // The hero photo is decoration; on a very short viewport the
-          // contact details and room list matter more.
-          if (!compact) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: SafeNetworkImage(
-                url: hostel.imageUrl,
-                height: 190,
-                placeholderIcon: Icons.apartment_outlined,
-                placeholderLabel: hostel.name,
-              ),
-            ),
-            const SizedBox(height: 18),
-            // The AppBar already shows the name, so repeat it only when
-            // there is room to spare.
-            Text(
-              hostel.name,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-          ],
-          Text(
-            '${hostel.rooms} rooms available  •  ${hostel.gender} students',
-            style: const TextStyle(color: AppColors.textSecondary),
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+    children: [
+      // The hero photo is decoration; on a very short viewport the
+      // contact details and room list matter more.
+      if (!compact) ...[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: SafeNetworkImage(
+            url: hostel.imageUrl,
+            height: 190,
+            placeholderIcon: Icons.apartment_outlined,
+            placeholderLabel: hostel.name,
           ),
-          const SizedBox(height: 14),
-          _HostelContactCard(hostel: hostel),
-          const SizedBox(height: 22),
-          const Text(
-            'Choose your room',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _RoomCard(
-            hostel: hostel,
-            title: '2-sharing room',
-            beds: '2 beds available',
-            price: hostel.price + 2500,
-          ),
-          _RoomCard(
-            hostel: hostel,
-            title: '4-sharing room',
-            beds: '3 beds available',
-            price: hostel.price,
-          ),
-          _RoomCard(
-            hostel: hostel,
-            title: '6-sharing room',
-            beds: '2 beds available',
-            price: hostel.price - 1500,
-          ),
-        ],
-      );
+        ),
+        const SizedBox(height: 18),
+        // The AppBar already shows the name, so repeat it only when
+        // there is room to spare.
+        Text(
+          hostel.name,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+      ],
+      Text(
+        '${hostel.rooms} rooms available  •  ${hostel.gender} students',
+        style: const TextStyle(color: AppColors.textSecondary),
+      ),
+      const SizedBox(height: 14),
+      _HostelContactCard(hostel: hostel),
+      const SizedBox(height: 22),
+      const Text(
+        'Choose your room',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 12),
+      _RoomCard(
+        hostel: hostel,
+        title: '2-sharing room',
+        beds: '2 beds available',
+        price: hostel.price + 2500,
+      ),
+      _RoomCard(
+        hostel: hostel,
+        title: '4-sharing room',
+        beds: '3 beds available',
+        price: hostel.price,
+      ),
+      _RoomCard(
+        hostel: hostel,
+        title: '6-sharing room',
+        beds: '2 beds available',
+        price: hostel.price - 1500,
+      ),
+    ],
+  );
 }
 
 /// Warden hotline, address and map link for a hostel.
@@ -530,12 +540,16 @@ class _HostelContactCard extends StatelessWidget {
     try {
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Could not open this. Details: ${hostel.phone}')),
+          SnackBar(
+            content: Text('Could not open this. Details: ${hostel.phone}'),
+          ),
         );
       }
     } catch (_) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not open this. Details: ${hostel.phone}')),
+        SnackBar(
+          content: Text('Could not open this. Details: ${hostel.phone}'),
+        ),
       );
     }
   }
@@ -565,7 +579,11 @@ class _HostelContactCard extends StatelessWidget {
           onTap: () => _open(context, hostel.phoneUrl),
           child: Row(
             children: [
-              const Icon(Icons.phone_outlined, size: 18, color: AppColors.primary),
+              const Icon(
+                Icons.phone_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 10),
               Text(
                 hostel.phone,
@@ -581,12 +599,19 @@ class _HostelContactCard extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.location_on_outlined, size: 18, color: AppColors.primary),
+            const Icon(
+              Icons.location_on_outlined,
+              size: 18,
+              color: AppColors.primary,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 hostel.address,
-                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
           ],
