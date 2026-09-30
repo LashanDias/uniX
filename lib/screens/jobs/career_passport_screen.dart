@@ -46,37 +46,62 @@ class CareerPassportScreen extends StatelessWidget {
                             border: Border.all(color: Colors.white, width: 2),
                             color: Colors.white24,
                           ),
-                          child: const Icon(Icons.person, size: 40, color: Colors.white),
+                          child: const Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAlignment.start,
-                          children: [
-                            Text(
-                              passport.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                        // Expanded so a long name or title wraps inside
+                        // the card instead of overflowing it.
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAlignment.start,
+                            children: [
+                              Text(
+                                passport.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              passport.title,
-                              style: const TextStyle(fontSize: 12, color: Colors.white70),
-                            ),
-                          ],
+                              const SizedBox(height: 2),
+                              Text(
+                                passport.title,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     const Divider(color: Colors.white24),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('Passport ID: UNIX-98421', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text('VERIFIED STUDENT ✅', style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                    // Wrap so the ID and the verified badge stack on a
+                    // narrow phone instead of overflowing the card.
+                    const Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          'Passport ID: UNIX-98421',
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                        Text(
+                          'VERIFIED STUDENT ✅',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -98,11 +123,23 @@ class CareerPassportScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.verified, color: AppColors.success, size: 22),
+                        Icon(
+                          Icons.verified,
+                          color: AppColors.success,
+                          size: 22,
+                        ),
                         SizedBox(width: 8),
-                        Text(
-                          'Verified Skills (Company Approved)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        // Expanded so this long heading wraps rather
+                        // than overflowing the card.
+                        Expanded(
+                          child: Text(
+                            'Verified Skills (Company Approved)',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -110,21 +147,39 @@ class CareerPassportScreen extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: passport.verifiedSkills.map((skill) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.badgeGreen,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.check_circle, size: 14, color: AppColors.badgeGreenText),
-                            const SizedBox(width: 4),
-                            Text(skill, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.badgeGreenText)),
-                          ],
-                        ),
-                      )).toList(),
+                      children: passport.verifiedSkills
+                          .map(
+                            (skill) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.badgeGreen,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 14,
+                                    color: AppColors.badgeGreenText,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    skill,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.badgeGreenText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                 ),
@@ -146,10 +201,14 @@ class CareerPassportScreen extends StatelessWidget {
                 contentWidget: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: passport.skills.map((s) => Chip(
-                    label: Text(s, style: const TextStyle(fontSize: 11)),
-                    backgroundColor: AppColors.chipBg,
-                  )).toList(),
+                  children: passport.skills
+                      .map(
+                        (s) => Chip(
+                          label: Text(s, style: const TextStyle(fontSize: 11)),
+                          backgroundColor: AppColors.chipBg,
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -160,15 +219,28 @@ class CareerPassportScreen extends StatelessWidget {
                 title: 'Projects',
                 contentWidget: Column(
                   crossAxisAlignment: CrossAlignment.start,
-                  children: passport.projects.map((p) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.arrow_right, color: AppColors.primary),
-                        Text(p, style: const TextStyle(fontSize: 13)),
-                      ],
-                    ),
-                  )).toList(),
+                  children: passport.projects
+                      .map(
+                        (p) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.arrow_right,
+                                color: AppColors.primary,
+                              ),
+                              // Expanded so a long project name wraps.
+                              Expanded(
+                                child: Text(
+                                  p,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -179,16 +251,33 @@ class CareerPassportScreen extends StatelessWidget {
                 title: 'Certificates',
                 contentWidget: Column(
                   crossAxisAlignment: CrossAlignment.start,
-                  children: passport.certificates.map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified, color: AppColors.primary, size: 16),
-                        const SizedBox(width: 6),
-                        Text(c, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  )).toList(),
+                  children: passport.certificates
+                      .map(
+                        (c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.verified,
+                                color: AppColors.primary,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              // Expanded so a long certificate name wraps.
+                              Expanded(
+                                child: Text(
+                                  c,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
               ),
             ],
@@ -219,11 +308,24 @@ class CareerPassportScreen extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          if (content != null) Text(content, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          if (content != null)
+            Text(
+              content,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ?contentWidget,
         ],
       ),

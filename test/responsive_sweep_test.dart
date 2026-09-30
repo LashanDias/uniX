@@ -7,7 +7,6 @@ import 'package:unix_app/screens/auth/login_screen.dart';
 import 'package:unix_app/screens/auth/signup_screen.dart';
 import 'package:unix_app/screens/hostels/hostels_screen.dart';
 import 'package:unix_app/screens/jobs/career_passport_screen.dart';
-import 'package:unix_app/screens/jobs/jobs_home_screen.dart';
 import 'package:unix_app/screens/jobs/micro_gigs_screen.dart';
 import 'package:unix_app/screens/marketplace/marketplace_screen.dart';
 import 'package:unix_app/screens/notes/notes_home_screen.dart';
@@ -16,6 +15,10 @@ import 'package:unix_app/screens/tickets/tickets_screen.dart';
 
 /// Screens that can be built without a live Firebase app, by name.
 ///
+/// JobsHomeScreen, DashboardScreen, ProfileScreen and the recruiter screens
+/// are absent because they reach FirebaseAuth/Firestore during build and throw
+/// `[core/no-app]` in a plain widget test. Covering them needs Firebase mocks.
+///
 /// Anything clipped on the right edge of a phone shows up here: a Row or
 /// Column that cannot fit reports a RenderFlex overflow, which the test
 /// framework surfaces as an exception.
@@ -23,7 +26,6 @@ final _screens = <String, Widget Function()>{
   'Notifications': () => const NotificationsScreen(),
   'Tickets': () => const TicketsScreen(),
   'Recent activity': () => const RecentActivityScreen(),
-  'Jobs home': () => const JobsHomeScreen(),
   'Micro gigs': () => const MicroGigsScreen(),
   'Career passport': () => const CareerPassportScreen(),
   'Login': () => const LoginScreen(),
@@ -32,8 +34,10 @@ final _screens = <String, Widget Function()>{
   'Hostel list': () => const HostelListScreen(gender: 'Boys'),
   'Hostel detail': () =>
       HostelDetailsScreen(hostel: HostelsScreen.hostels.first),
-  'Marketplace': () => const MarketplaceScreen(productStream: Stream.empty()),
-  'Notes home': () => const NotesHomeScreen(notesStream: Stream.empty()),
+  // Stream.value, not Stream.empty: an empty stream never emits, so the
+  // screen keeps its loading spinner and pumpAndSettle never returns.
+  'Marketplace': () => MarketplaceScreen(productStream: Stream.value(const [])),
+  'Notes home': () => NotesHomeScreen(notesStream: Stream.value(const [])),
 };
 
 /// A small Android phone, a typical phone, and a large phone.

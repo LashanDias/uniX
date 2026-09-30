@@ -185,7 +185,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                                   gridDelegate:
                                       const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: 2,
-                                        mainAxisExtent: 210,
+                                        // 210 was 14px short once a title
+                                        // wrapped to two lines, clipping the
+                                        // price off the bottom of the card.
+                                        mainAxisExtent: 232,
                                         crossAxisSpacing: 14,
                                         mainAxisSpacing: 14,
                                       ),
@@ -327,30 +330,35 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAlignment.start,
-                children: [
-                  Text(
-                    product.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+            // Expanded so the text block is bounded by the tile height
+            // rather than pushing past it when a title wraps.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      product.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Rs. ${product.price.toInt()}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Rs. ${product.price.toInt()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

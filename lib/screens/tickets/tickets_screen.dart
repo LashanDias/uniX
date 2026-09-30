@@ -79,7 +79,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
             children: [
               Icon(Icons.verified, color: AppColors.success),
               SizedBox(width: 6),
-              Text('Verified Ticket'),
+              // Flexible so the label ellipsises instead of
+              // overflowing the card on a narrow phone.
+              Flexible(
+                child: Text('Verified Ticket', overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -90,7 +94,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
           const SizedBox(height: 5),
           Text(details, style: const TextStyle(color: AppColors.textSecondary)),
           const SizedBox(height: 14),
-          Row(
+          // Wrap, not Row: the price and the button do not fit side
+          // by side on a small phone and must be allowed to stack.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Text(
                 price,
@@ -99,7 +109,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   color: AppColors.primary,
                 ),
               ),
-              const Spacer(),
               FilledButton(
                 onPressed: () => setState(() => _wallet = true),
                 child: const Text('Buy ticket'),
