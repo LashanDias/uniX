@@ -202,21 +202,32 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
-                if (!_checked)
-                  const Text(
-                    'Select your dates and check availability to view rooms.',
-                  )
-                else ...[
+                // Rooms are listed straight away. Hiding them behind the date
+                // picker meant opening the hostel showed an empty screen,
+                // which reads as the feature being broken. Dates are still
+                // needed to save a booking, not to look.
+                ...[
                   Text(
                     '$free of ${rooms.length} rooms have free beds',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  if (!_checked) ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Choose your dates above to book one of these rooms.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   for (final room in rooms)
                     _RoomCard(
                       room: room,
                       nights: _nights,
                       saving: _saving,
+                      canBook: _checked,
                       onSave: () => _saveRequest(room),
                     ),
                 ],
@@ -375,12 +386,16 @@ class _RoomCard extends StatelessWidget {
     required this.room,
     required this.nights,
     required this.saving,
+    required this.canBook,
     required this.onSave,
   });
 
   final HostelRoom room;
   final int nights;
   final bool saving;
+
+  /// False until dates are chosen, since a booking needs them.
+  final bool canBook;
   final VoidCallback onSave;
 
   @override
@@ -459,9 +474,9 @@ class _RoomCard extends StatelessWidget {
                     child: const Text('Fully booked'),
                   )
                 : ElevatedButton.icon(
-                    onPressed: saving ? null : onSave,
+                    onPressed: saving || !canBook ? null : onSave,
                     icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                    label: const Text('Book now'),
+                    label: Text(canBook ? 'Book now' : 'Choose dates to book'),
                   ),
           ),
         ],

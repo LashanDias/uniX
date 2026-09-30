@@ -96,6 +96,21 @@ void main() {
     });
   });
 
+  group('one source of truth for prices', () {
+    test('only 4-sharing and 6-sharing rooms are priced', () {
+      // The hostel detail screen used to derive prices by adding and
+      // subtracting from a per-hostel figure, which produced 12,500 / 10,000 /
+      // 8,500 and offered a 2-sharing room that does not exist. Both screens
+      // now read these two figures.
+      expect(GirlsHostelInventory.monthlyPrice(4), 9500);
+      expect(GirlsHostelInventory.monthlyPrice(6), 8000);
+    });
+
+    test('an unknown sharing size falls back to the 4-sharing rate', () {
+      expect(GirlsHostelInventory.monthlyPrice(2), 9500);
+    });
+  });
+
   group('labels', () {
     test('a fully booked room says so instead of showing 0 beds', () {
       const full = HostelRoom(

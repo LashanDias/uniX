@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/boarding_store.dart';
+import '../../services/girls_hostel_inventory.dart';
 import 'boarding_screen.dart';
 import 'girls_hostel_screen.dart';
 import '../../widgets/app_back_button.dart';
@@ -504,23 +505,20 @@ class HostelDetailsScreen extends StatelessWidget {
         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 12),
-      _RoomCard(
-        hostel: hostel,
-        title: '2-sharing room',
-        beds: '2 beds available',
-        price: hostel.price + 2500,
-      ),
+      // Rates come from the shared inventory rather than arithmetic on a
+      // per-hostel figure, which produced prices contradicting the published
+      // ones and offered a 2-sharing room the halls do not have.
       _RoomCard(
         hostel: hostel,
         title: '4-sharing room',
-        beds: '3 beds available',
-        price: hostel.price,
+        beds: '4 students per room',
+        price: GirlsHostelInventory.monthlyPrice(4),
       ),
       _RoomCard(
         hostel: hostel,
         title: '6-sharing room',
-        beds: '2 beds available',
-        price: hostel.price - 1500,
+        beds: '6 students per room',
+        price: GirlsHostelInventory.monthlyPrice(6),
       ),
     ],
   );
