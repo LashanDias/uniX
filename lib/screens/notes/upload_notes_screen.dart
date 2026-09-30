@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/notes_service.dart';
 
 class UploadNotesScreen extends StatefulWidget {
   const UploadNotesScreen({super.key});
@@ -10,7 +11,10 @@ class UploadNotesScreen extends StatefulWidget {
 
 class _UploadNotesScreenState extends State<UploadNotesScreen> {
   String selectedSubject = 'ICT';
-  String fileName = "";
+  String fileName = '';
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
+  bool submitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,7 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
               ),
               const SizedBox(height: 6),
               TextField(
+                controller: titleController,
                 decoration: const InputDecoration(
                   hintText: 'Enter note title',
                 ),
@@ -114,6 +119,7 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
               ),
               const SizedBox(height: 6),
               TextField(
+                controller: descriptionController,
                 maxLines: 4,
                 decoration: const InputDecoration(
                   hintText: 'Write description...',
@@ -129,13 +135,42 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
               const SizedBox(height: 30),
 
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Note uploaded successfully!')),
-                  );
-                  Navigator.pop(context);
+                onPressed: submitting ? null : () async {
+                  final title = titleController.text.trim();
+                  final description = descriptionController.text.trim();
+                  final messenger = ScaffoldMessenger.maybeOf(context);
+                  final navigator = Navigator.of(context);
+
+                  if (title.isEmpty) {
+                    messenger?.showSnackBar(
+                      const SnackBar(content: Text('Please enter a note title.')),
+                    );
+                    return;
+                  }
+
+                  setState(() => submitting = true);
+                  try {
+                    await NotesService.addNote(
+                      title: title,
+                      subject: selectedSubject,
+                      description: description,
+                      fileType: fileName.isEmpty ? 'PDF' : fileName.split('.').last,
+                    );
+                    if (!mounted) return;
+                    messenger?.showSnackBar(
+                      const SnackBar(content: Text('Note uploaded successfully!')),
+                    );
+                    navigator.pop();
+                  } catch (error) {
+                    if (!mounted) return;
+                    messenger?.showSnackBar(
+                      SnackBar(content: Text(error.toString())),
+                    );
+                  } finally {
+                    if (mounted) setState(() => submitting = false);
+                  }
                 },
-                child: const Text('Upload'),
+                child: Text(submitting ? 'Uploading...' : 'Upload'),
               ),
             ],
           ),

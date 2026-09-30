@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1007229911565",
+    "project_id": "my-unix-app-17-d8a63",
+    "storage_bucket": "my-unix-app-17-d8a63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007229911565:android:45743dc7e291e6b7164b44",
+        "android_client_info": {
+          "package_name": "com.unix.app.unix_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDr3fPL3Jf3mNg_jFIDpuBqk_8cOmz3R_I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

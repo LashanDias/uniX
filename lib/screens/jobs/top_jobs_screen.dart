@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/career_ai_service.dart';
+import '../../services/job_service.dart';
+import 'job_listing_card.dart';
 
 class TopJobsScreen extends StatelessWidget {
   final VoidCallback onPrev;
+  final Stream<List<JobItem>>? jobsStream;
 
-  const TopJobsScreen({super.key, required this.onPrev});
+  const TopJobsScreen({super.key, required this.onPrev, this.jobsStream});
 
   @override
   Widget build(BuildContext context) {
-    final List<JobItem> jobs = MockDataService.getJobs();
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -25,7 +26,7 @@ class TopJobsScreen extends StatelessWidget {
               ),
               const Expanded(
                 child: Text(
-                  'Recommended Jobs',
+                  'Available Vacancies',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -36,191 +37,115 @@ class TopJobsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Top Banner matching Figma iPhone 1
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.fromLTRB(18, 16, 4, 10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF002DDF), Color(0xFF2563EB)],
-              ),
+              color: AppColors.primary,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAlignment.start,
-                    children: const [
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Top jobs for you, Cool! 🥳',
+                        'Top jobs for you,\nCool! 🎉',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          height: 1.15,
                         ),
                       ),
-                      SizedBox(height: 6),
+                      SizedBox(height: 8),
                       Text(
-                        'Based on your CV and skill - match analysis',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                        'Explore vacancies posted\nby recruiters',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 42),
+                Image.asset(
+                  'assets/images/jobs_robot.png',
+                  width: 90,
+                  height: 90,
+                  fit: BoxFit.contain,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-
-          // Filter bar (Filters, Sort by: Best Match)
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.tune, size: 16, color: AppColors.textPrimary),
-                    SizedBox(width: 4),
-                    Text('Filters', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: const [
-                    Text('Sort by : Best Match', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, size: 16),
-                  ],
-                ),
-              ),
-            ],
+          StreamBuilder<List<JobItem>>(
+            stream: jobsStream ?? JobService.watchJobs(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Text(
+                  'Unable to load vacancies. Check your connection and try again.',
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.data!.isEmpty) {
+                return const Text('No vacancies have been posted yet.');
+              }
+              return Column(
+                children: [
+                  for (final job in snapshot.data!) JobListingCard(job: job),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
-
-          // Job list items with match % badges & Apply NOW buttons matching Figma
-          ...jobs.map((job) => Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAlignment.start,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.business, color: Colors.deepOrange),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAlignment.start,
-                        children: [
-                          Text(job.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 2),
-                          Text('${job.company} • ${job.location}', style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.chipBg,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(job.type, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.success, width: 2.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${job.matchPercentage}%\nMatch',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.success),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Applied for ${job.title}!')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(110, 36),
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Apply NOW', style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-              ],
-            ),
-          )),
-          const SizedBox(height: 16),
-
-          // Ask AI Banner at bottom matching Figma
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.4),
+              color: const Color(0xFFEAF1FF),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                const Icon(Icons.stars, color: AppColors.primary, size: 24),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'Not finding the right job?\nLet our AI understand what you\'re looking for',
-                    style: TextStyle(fontSize: 11, color: AppColors.textPrimary),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    'assets/images/ai_sparkle.jfif',
+                    width: 42,
+                    height: 42,
+                    fit: BoxFit.cover,
                   ),
                 ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Not finding the right job? Let our AI understand what you\'re looking for and find better matches for you',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textPrimary,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => _showAiHelp(context),
                   style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(60, 32),
-                    side: const BorderSide(color: AppColors.primary),
+                    minimumSize: const Size(78, 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: const Text('+ Ask AI', style: TextStyle(fontSize: 11)),
                 ),
@@ -228,23 +153,28 @@ class TopJobsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Quick button to view Micro-Gigs & Career Passport
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => Navigator.pushNamed(context, '/micro_gigs'),
                   icon: const Icon(Icons.flash_on, size: 16),
-                  label: const Text('Micro-Gigs ⚡', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Micro-Gigs ⚡',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/career_passport'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/career_passport'),
                   icon: const Icon(Icons.badge_outlined, size: 16),
-                  label: const Text('Passport 🏆', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Passport 🏆',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
             ],
@@ -252,5 +182,163 @@ class TopJobsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showAiHelp(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final controller = TextEditingController();
+        final messages = <Map<String, String>>[
+          {
+            'sender': 'ai',
+            'text':
+                'How can AI help you today? Tell me what kind of job you want.',
+          },
+        ];
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            var isLoading = false;
+
+            Future<void> sendMessage() async {
+              final text = controller.text.trim();
+              if (text.isEmpty || isLoading) return;
+              controller.clear();
+              setSheetState(() {
+                messages.add({'sender': 'user', 'text': text});
+                isLoading = true;
+              });
+              final reply = await _generateAiReply(text);
+              if (!sheetContext.mounted) return;
+              setSheetState(() {
+                isLoading = false;
+                messages.add({'sender': 'ai', 'text': reply});
+              });
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  16 + MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AI Job Assistant',
+                      style: TextStyle(
+                        color: Color(0xFF023E8A),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 260),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          final isUser = message['sender'] == 'user';
+                          return Align(
+                            alignment: isUser
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isUser
+                                    ? const Color(0xFF023E8A)
+                                    : const Color(0xFFEAF1FF),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Text(
+                                message['text']!,
+                                style: TextStyle(
+                                  color: isUser
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 8),
+                            Text('Gemini is thinking...'),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: controller,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => sendMessage(),
+                            decoration: InputDecoration(
+                              hintText: 'Ask about jobs, skills, or CVs...',
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: sendMessage,
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFF023E8A),
+                          ),
+                          icon: const Icon(Icons.send, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<String> _generateAiReply(String userMessage) async {
+    try {
+      return await CareerAiService.analyze(userMessage);
+    } catch (_) {
+      return 'I could not reach Career AI. Please sign in and try again later.';
+    }
   }
 }

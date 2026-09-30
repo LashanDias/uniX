@@ -9,15 +9,17 @@ class MockDataService {
         subject: 'ICT',
         fileType: 'PDF',
         uploadedDate: '20 May 2025',
-        description: 'This comprehensive lecture note covers the fundamental building blocks of modern communication networks. It details how data is transmitted across systems and explores the core architectural layouts used in enterprise environments.',
+        description:
+            'This comprehensive lecture note covers the fundamental building blocks of modern communication networks. It details how data is transmitted across systems and explores the core architectural layouts used in enterprise environments.',
       ),
       NoteItem(
         id: '2',
-        title: 'Data Structures & Algorithms',
+        title: 'Data Structures & Algorithms - Midterm Summary',
         subject: 'ICT',
         fileType: 'DOCX',
         uploadedDate: '18 May 2025',
-        description: 'Core concepts of arrays, linked lists, trees, graphs, sorting and searching algorithms.',
+        description:
+            'Core concepts of arrays, linked lists, trees, graphs, sorting and searching algorithms.',
       ),
       NoteItem(
         id: '3',
@@ -25,15 +27,17 @@ class MockDataService {
         subject: 'English',
         fileType: 'PDF',
         uploadedDate: '15 May 2025',
-        description: 'Academic writing conventions, essay structures, and formal grammar rules.',
+        description:
+            'Academic writing conventions, essay structures, and formal grammar rules.',
       ),
       NoteItem(
         id: '4',
-        title: 'Linear Algebra & Calculus',
+        title: 'Linear Algebra - Week 3 Lecture Slides',
         subject: 'Mathematics',
         fileType: 'PDF',
         uploadedDate: '12 May 2025',
-        description: 'Matrices, vector spaces, derivatives, integrals and differential equations.',
+        description:
+            'Matrices, vector spaces, derivatives, integrals and differential equations.',
       ),
     ];
   }
@@ -42,22 +46,27 @@ class MockDataService {
     return [
       ProductItem(
         id: '1',
-        title: 'Backpack',
+        title: 'Engineering Mathematics Textbook (Used)',
         category: 'Books',
-        price: 2500,
-        imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500',
+        price: 1500,
+        imageUrl:
+            'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500',
         sellerName: 'John Doe',
+        sellerId: 'demo-user-1',
         rating: 4.8,
         reviewsCount: 15,
-        description: 'High capacity waterproof backpack suitable for laptop and books.',
+        description:
+            'High capacity waterproof backpack suitable for laptop and books.',
       ),
       ProductItem(
         id: '2',
-        title: 'Calculator',
+        title: 'Casio FX-991EX Calculator - Rs. 200/day',
         category: 'Electronics',
-        price: 800,
-        imageUrl: 'https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48a?w=500',
+        price: 200,
+        imageUrl:
+            'https://images.unsplash.com/photo-1611125832047-1d7ad1e8e48a?w=500',
         sellerName: 'Sarah Smith',
+        sellerId: 'demo-user-2',
         rating: 4.9,
         reviewsCount: 32,
         description: 'Casio Scientific Calculator FX-991EX in great condition.',
@@ -67,22 +76,28 @@ class MockDataService {
         title: 'Wireless Earbuds',
         category: 'Electronics',
         price: 45000,
-        imageUrl: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500',
+        imageUrl:
+            'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500',
         sellerName: 'John Daily',
+        sellerId: 'demo-user-3',
         rating: 4.8,
         reviewsCount: 23,
-        description: 'Good quality earbuds used only for 2 months. Noise cancellation works great.',
+        description:
+            'Good quality earbuds used only for 2 months. Noise cancellation works great.',
       ),
       ProductItem(
         id: '4',
         title: 'Calculus Book',
         category: 'Books',
         price: 1200,
-        imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500',
+        imageUrl:
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500',
         sellerName: 'Amal Perera',
+        sellerId: 'demo-user-4',
         rating: 4.5,
         reviewsCount: 8,
-        description: 'Thomas Calculus 14th edition, clean condition without highlight marks.',
+        description:
+            'Thomas Calculus 14th edition, clean condition without highlight marks.',
       ),
     ];
   }
@@ -187,10 +202,24 @@ class MockDataService {
       name: 'Olina Tottere',
       title: 'Data Science Undergraduate',
       education: 'BSc (Hons) Data Science • University of SLTC (2021-2025)',
-      skills: ['Python', 'SQL', 'Power BI', 'Data Analysis', 'Communication', 'Problem Solving'],
+      skills: [
+        'Python',
+        'SQL',
+        'Power BI',
+        'Data Analysis',
+        'Communication',
+        'Problem Solving',
+      ],
       verifiedSkills: ['Python', 'Pandas', 'Data Cleaning'],
-      projects: ['Sales Dashboard using Power BI', 'Customer Segmentation with Python', 'Data Cleaning & Analysis using SQL'],
-      certificates: ['Google Data Analytics Professional Certificate', 'Microsoft Power BI Data Analyst Associate'],
+      projects: [
+        'Sales Dashboard using Power BI',
+        'Customer Segmentation with Python',
+        'Data Cleaning & Analysis using SQL',
+      ],
+      certificates: [
+        'Google Data Analytics Professional Certificate',
+        'Microsoft Power BI Data Analyst Associate',
+      ],
     );
   }
 }

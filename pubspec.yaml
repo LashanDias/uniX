@@ -34,6 +34,19 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  image_picker: ^1.2.3
+  shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
+  pdfrx: ^2.4.5
+  archive: ^3.6.1
+  xml: ^6.6.1
+  firebase_core: ^4.14.0
+  firebase_auth: ^6.6.1
+  cloud_firestore: ^6.9.0
+  firebase_storage: ^13.5.0
+  cloud_functions: ^6.4.0
+  google_sign_in: ^7.2.0
+  file_picker: ^13.0.0
 
 dev_dependencies:
   flutter_test:
@@ -56,6 +69,29 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/images/lost_wallet.png
+    - assets/images/lost_keys.png
+    - assets/images/lost_student_card.png
+    - assets/images/sri_lankan_restaurant.png
+    - assets/images/skill_match_ads.png
+    - assets/images/skill_match_robot.jfif
+    - assets/images/ai_robot.png
+    - assets/images/ai_bot.png
+    - assets/images/jobs_robot.png
+    - assets/images/dialog_logo.jfif
+    - assets/images/ai_sparkle.jfif
+    - assets/images/unix_logo.png
+    - assets/images/google_logo.png
+    - assets/images/images__2_-removebg-preview (1)_3.png
+    - assets/images/forgot_password_illustration.jfif
+    - assets/images/linkedin_logo.png
+    - assets/images/profile_photo.jfif
+    - assets/images/backpack.jfif
+    - assets/images/calculator.jfif
+    - assets/images/earbuds.jfif
+    - assets/images/calculus_book.jfif
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,0 +1,31 @@
+{
+    "flutter":  {
+                    "platforms":  {
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "my-unix-app-17-d8a63",
+                                                                      "appId":  "1:1007229911565:android:45743dc7e291e6b7164b44",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  },
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "my-unix-app-17-d8a63",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:1007229911565:android:45743dc7e291e6b7164b44",
+                                                                                                            "ios":  "1:1007229911565:ios:60b3e15b6005098b164b44",
+                                                                                                            "macos":  "1:1007229911565:ios:60b3e15b6005098b164b44",
+                                                                                                            "web":  "1:1007229911565:web:2a1adc66072cd622164b44",
+                                                                                                            "windows":  "1:1007229911565:web:a01499b1e6f4c05e164b44"
+                                                                                                        }
+                                                                                 }
+                                               }
+                                  }
+                },
+    "firestore":  {
+                      "rules":  "firestore.rules"
+                  },
+    "storage":  {
+                    "rules":  "storage.rules"
+                }
+}

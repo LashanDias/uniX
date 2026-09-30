@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
+import '../../services/auth_service.dart';
+import '../../services/marketplace_service.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final ProductItem product;
@@ -9,6 +12,10 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final canManageItem = currentUser != null &&
+        (currentUser.uid == product.sellerId || AuthService.isCurrentUserAdmin());
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -114,7 +121,41 @@ class ProductDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 36),
 
-              // Action buttons: chat with seller & call
+              if (canManageItem) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          try {
+                            await MarketplaceService.deleteProduct(product.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Item removed successfully.')),
+                              );
+                              Navigator.pop(context);
+                            }
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(error.toString())),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Delete item'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+
               Row(
                 children: [
                   Expanded(

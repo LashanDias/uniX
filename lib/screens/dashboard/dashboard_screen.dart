@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/auth_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateTab;
@@ -9,254 +11,398 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAlignment.start,
-            children: [
-              // Header with notification bell
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none_outlined, size: 28),
-                    onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Hello User greeting
-              Row(
-                children: const [
-                  Text(
-                    'Hello, User ',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text('👋', style: TextStyle(fontSize: 22)),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Search Bar
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search anything...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textLight),
-                  fillColor: Colors.white,
-                  filled: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              const Text(
-                'Quick Access',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Quick Access Grid matching Frame 11 (Notes, Market, Job, Lost & Found, Hostels)
-              SizedBox(
-                height: 160,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildQuickCard(
-                      title: 'Notes',
-                      icon: Icons.assignment_outlined,
-                      color: Colors.blue.shade50,
-                      iconColor: AppColors.primary,
-                      onTap: () => onNavigateTab(1),
-                    ),
-                    const SizedBox(width: 14),
-                    _buildQuickCard(
-                      title: 'Market',
-                      icon: Icons.storefront_outlined,
-                      color: Colors.orange.shade50,
-                      iconColor: Colors.orange,
-                      onTap: () => onNavigateTab(2),
-                    ),
-                    const SizedBox(width: 14),
-                    _buildQuickCard(
-                      title: 'Job',
-                      icon: Icons.work_outline,
-                      color: Colors.purple.shade50,
-                      iconColor: Colors.purple,
-                      onTap: () => onNavigateTab(3),
-                    ),
-                    const SizedBox(width: 14),
-                    _buildQuickCard(
-                      title: 'Lost & Found',
-                      icon: Icons.find_in_page_outlined,
-                      color: Colors.teal.shade50,
-                      iconColor: Colors.teal,
-                      onTap: () => Navigator.pushNamed(context, '/lost_found'),
-                    ),
-                    const SizedBox(width: 14),
-                    _buildQuickCard(
-                      title: 'Hostels',
-                      icon: Icons.apartment_outlined,
-                      color: Colors.amber.shade50,
-                      iconColor: Colors.amber.shade800,
-                      onTap: () => Navigator.pushNamed(context, '/hostels'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // AI Assistant Banner matching Figma
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF002DDF), Color(0xFF1E40AF)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAlignment.start,
-                        children: [
-                          const Text(
-                            'AI Assistant',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Get smart suggestions and instant help.',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          InkWell(
-                            onTap: () => Navigator.pushNamed(context, '/ai_market_assistant'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () {},
+                      ),
+                      const Expanded(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: 'Hi '),
+                              TextSpan(
+                                text: 'Student',
+                                style: TextStyle(color: AppColors.primary),
                               ),
-                              child: const Text(
-                                'Ask AI',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                              TextSpan(text: '  👋'),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 23,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications_none_outlined,
+                          size: 28,
+                        ),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/notifications'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search notes, hostels, tickets, or gear...',
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.textLight,
+                      ),
+                      fillColor: const Color(0xFFF4F6F8),
+                      filled: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (AuthService.isAdminEmail(
+                    FirebaseAuth.instance.currentUser?.email,
+                  ))
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => Navigator.pushNamed(context, '/admin'),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF101828),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.shield_outlined,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Admin Panel',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Manage app controls and system access',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  const Text(
+                    'What do you need for class today?',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Trending on Campus Today',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            mainAxisExtent: 150,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      itemCount: 6,
+                      itemBuilder: (context, index) {
+                        final items = [
+                          (
+                            'Notes',
+                            Icons.assignment_outlined,
+                            AppColors.primary,
+                            const Color(0xFFEAF1FF),
+                            () => onNavigateTab(1),
+                          ),
+                          (
+                            'Market',
+                            Icons.storefront_outlined,
+                            const Color(0xFFFF8A00),
+                            const Color(0xFFFFF4E3),
+                            () => onNavigateTab(2),
+                          ),
+                          (
+                            'Restaurants',
+                            Icons.restaurant_outlined,
+                            Colors.purple,
+                            const Color(0xFFF3E8FF),
+                            () => Navigator.pushNamed(context, '/restaurants'),
+                          ),
+                          (
+                            'Job',
+                            Icons.work_outline,
+                            Colors.deepPurple,
+                            const Color(0xFFF3E8FF),
+                            () => onNavigateTab(3),
+                          ),
+                          (
+                            'Lost & Found',
+                            Icons.search,
+                            Colors.teal,
+                            const Color(0xFFE0F2F1),
+                            () => Navigator.pushNamed(context, '/lost_found'),
+                          ),
+                          (
+                            'Hostel',
+                            Icons.apartment_outlined,
+                            Colors.orange,
+                            const Color(0xFFFFF4E3),
+                            () => Navigator.pushNamed(context, '/hostels'),
+                          ),
+                        ];
+                        final item = items[index];
+                        return SizedBox(
+                          width: 135,
+                          child: _buildQuickCard(
+                            title: item.$1,
+                            icon: item.$2,
+                            iconColor: item.$3,
+                            backgroundColor: item.$4,
+                            onTap: item.$5,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF8EF),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.verified_user_outlined,
+                          color: AppColors.success,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'SLTC verified community • Secure peer-to-peer payments',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4E3),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.campaign_outlined, color: AppColors.warning),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Campus Partner • PrintHub: 10% off note printing',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  InkWell(
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/ai_market_assistant'),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: 130,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            flex: 5,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 24),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'AI Assistant',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Get smart suggestions and\ninstant help.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 4,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 5, 8, 5),
+                              child: Image.asset(
+                                'assets/images/ai_bot.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 40),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Recent Activity Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Activity',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Text(
-                      'View All',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Activity',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, '/recent_activity'),
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x140F172A),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.note_add_outlined,
+                          color: AppColors.primary,
+                          size: 26,
+                        ),
+                        SizedBox(width: 18),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'New note uploaded',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              '2 minutes ago',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.description_outlined, color: AppColors.primary, size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAlignment.start,
-                      children: const [
-                        Text(
-                          'New note uploaded',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          '2 minutes ago',
-                          style: TextStyle(color: AppColors.textLight, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -266,45 +412,60 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildQuickCard({
     required String title,
     required IconData icon,
-    required Color color,
     required Color iconColor,
+    required Color backgroundColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 125,
-        padding: const EdgeInsets.all(14),
+        height: 200,
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primaryLight, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: const Color(0xFFF5F7FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary, width: 1.2),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x160F172A),
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 36),
+                  ),
+                ),
               ),
-              child: Icon(icon, color: iconColor, size: 30),
             ),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: AppColors.textPrimary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -312,4 +473,5 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+
 }

@@ -57,13 +57,20 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                     const SizedBox(height: 6),
                     const Text(
                       'Enter the 4 - digit code send to your\nregistered email',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
 
                     // Illustration
-                    Icon(Icons.mark_email_read_outlined, size: 70, color: AppColors.primary),
+                    Icon(
+                      Icons.mark_email_read_outlined,
+                      size: 70,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(height: 24),
 
                     // 4 Code boxes matching Figma
@@ -79,7 +86,9 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: filled ? AppColors.primary : AppColors.inputBorder,
+                              color: filled
+                                  ? AppColors.primary
+                                  : AppColors.inputBorder,
                               width: filled ? 2 : 1,
                             ),
                           ),
@@ -100,7 +109,10 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
 
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/new_password');
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/forgot_password',
+                        );
                       },
                       child: const Text('Reset password'),
                     ),
@@ -131,7 +143,10 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                         height: 50,
                         child: IconButton(
                           onPressed: _onBackspace,
-                          icon: const Icon(Icons.backspace_outlined, color: AppColors.textPrimary),
+                          icon: const Icon(
+                            Icons.backspace_outlined,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -160,12 +175,18 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
         onPressed: () => _onKeyTap(number),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
           padding: EdgeInsets.zero,
         ),
         child: Text(
           number,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     );

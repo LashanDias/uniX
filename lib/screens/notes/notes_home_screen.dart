@@ -129,28 +129,32 @@ class _NotesHomeScreenState extends State<NotesHomeScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.picture_as_pdf, color: AppColors.primary),
                     ),
-                    child: const Icon(Icons.picture_as_pdf, color: AppColors.primary),
+                    title: Text(
+                      note.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    subtitle: Text(
+                      '${note.subject} • ${note.uploadedDate}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textLight),
+                    onTap: () {
+                      Navigator.pushNamed(context, '/note_detail', arguments: note);
+                    },
                   ),
-                  title: Text(
-                    note.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    '${note.subject} • ${note.uploadedDate}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textLight),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textLight),
-                  onTap: () {
-                    Navigator.pushNamed(context, '/note_detail', arguments: note);
-                  },
                 ),
               )),
             ],

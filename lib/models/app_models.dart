@@ -5,6 +5,8 @@ class NoteItem {
   final String fileType;
   final String uploadedDate;
   final String description;
+  final String ownerId;
+  final String fileUrl;
 
   NoteItem({
     required this.id,
@@ -13,6 +15,8 @@ class NoteItem {
     required this.fileType,
     required this.uploadedDate,
     required this.description,
+    this.ownerId = '',
+    this.fileUrl = '',
   });
 }
 
@@ -23,6 +27,7 @@ class ProductItem {
   final double price;
   final String imageUrl;
   final String sellerName;
+  final String sellerId;
   final double rating;
   final int reviewsCount;
   final String description;
@@ -34,6 +39,7 @@ class ProductItem {
     required this.price,
     required this.imageUrl,
     required this.sellerName,
+    required this.sellerId,
     required this.rating,
     required this.reviewsCount,
     required this.description,
@@ -48,6 +54,10 @@ class JobItem {
   final String type; // Hybrid, Full-time, Internship
   final int matchPercentage;
   final String logoUrl;
+  final String recruiterId;
+  final String description;
+  final String requirements;
+  final String contactEmail;
 
   JobItem({
     required this.id,
@@ -57,6 +67,10 @@ class JobItem {
     required this.type,
     required this.matchPercentage,
     required this.logoUrl,
+    this.recruiterId = '',
+    this.description = '',
+    this.requirements = '',
+    this.contactEmail = '',
   });
 }
 

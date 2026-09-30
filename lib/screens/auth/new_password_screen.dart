@@ -28,55 +28,63 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   }
 
   Widget _buildFormView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: Column(
-        crossAxisAlignment: CrossAlignment.center,
-        children: [
-          const SizedBox(height: 10),
-          const Text(
-            'New Password',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 30),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 375),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAlignment.center,
+            children: [
+              const SizedBox(height: 10),
+              const Text(
+                'New Password',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 30),
 
-          // Illustration
-          Icon(Icons.shield_outlined, size: 80, color: AppColors.primary),
-          const SizedBox(height: 36),
+              // Illustration
+              Image.asset(
+                'assets/images/forgot_password_illustration.jfif',
+                width: 240,
+                height: 170,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 36),
 
-          TextField(
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: 'New Password',
-              prefixIcon: Icon(Icons.lock_outline, size: 20),
-              suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
-            ),
-          ),
-          const SizedBox(height: 16),
+              TextField(
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'New Password',
+                  prefixIcon: Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 16),
 
-          TextField(
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: 'Confirm Password',
-              prefixIcon: Icon(Icons.lock_outline, size: 20),
-              suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
-            ),
-          ),
-          const SizedBox(height: 36),
+              TextField(
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Confirm Password',
+                  prefixIcon: Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
+                ),
+              ),
+              const SizedBox(height: 36),
 
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                isSuccessState = true;
-              });
-            },
-            child: const Text('Verify'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/forgot_password');
+                },
+                child: const Text('Verifiy'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -95,7 +103,11 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
             ),
             child: Column(
               children: const [
-                Icon(Icons.check_circle_rounded, size: 100, color: Color(0xFF0284C7)),
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 100,
+                  color: Color(0xFF0284C7),
+                ),
                 SizedBox(height: 24),
                 Text(
                   'New password set successfully !',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
+import '../../services/notes_service.dart';
 
 class NoteDetailScreen extends StatelessWidget {
   final NoteItem note;
@@ -145,9 +146,38 @@ class NoteDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
+              if (NotesService.canManageNote(note)) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    try {
+                      await NotesService.deleteNote(note.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Note deleted successfully.')),
+                        );
+                        Navigator.pop(context);
+                      }
+                    } catch (error) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(error.toString())),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Delete note'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('submit'),
+                child: const Text('Back'),
               ),
             ],
           ),

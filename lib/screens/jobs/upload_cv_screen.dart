@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -12,6 +13,22 @@ class UploadCvScreen extends StatefulWidget {
 
 class _UploadCvScreenState extends State<UploadCvScreen> {
   String selectedFile = "";
+
+  Future<void> _pickCvFile() async {
+    final files = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx'],
+    );
+
+    if (files.isEmpty) {
+      return;
+    }
+
+    final file = files.single;
+    setState(() {
+      selectedFile = file.name;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +54,7 @@ class _UploadCvScreenState extends State<UploadCvScreen> {
 
           // Drag & Drop CV upload box matching Figma iPhone 16 & 17 Pro Max - 41
           GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedFile = "Amaangi_Resume_DataScience.pdf";
-              });
-            },
+            onTap: _pickCvFile,
             child: Container(
               width: double.infinity,
               height: 160,
