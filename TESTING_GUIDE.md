@@ -342,6 +342,122 @@ edge. That striped pattern is Flutter's "content doesn't fit" warning.
 
 ---
 
+### Test B6 — Girls hostel rooms
+
+1. **Hostels** -> **Girls** -> pick a hostel.
+
+**Expected:** a pink header saying **69 rooms reserved for students, across
+3 floors**, and **4-sharing and 6-sharing rooms for girls**.
+
+2. Scroll to **Room rates**.
+
+**Expected:** two cards. 4-sharing: LKR 9,500 month / 2,500 week / 900 day.
+6-sharing: LKR 8,000 / 2,250 / 600.
+
+3. Tap **Choose your dates**, pick a start and end date, then **Check
+   availability**.
+
+**Expected:** a line like *"17 of 23 rooms have free beds"*, then a card per
+room.
+
+4. Look at the room cards.
+
+**Expected:** room numbers like **0001**, **0004**, **0023** on Ground Floor
+and **0201** on 2nd Floor. The first three rooms on each floor are
+**6-sharing**; the rest are **4-sharing**. Each shows a green *"N beds
+available"* badge, or a grey **Fully booked** badge with the button disabled.
+
+5. Scroll the list up and down a few times.
+
+**Expected:** the bed counts **do not change**. They are fixed per room, not
+random. If they shuffle, that is a bug.
+
+6. Tap **Book now** on any room.
+
+**Expected:** a *Booking draft saved* dialog with the room, floor, dates and
+price, and a clear note that nothing has been reserved and no payment taken.
+
+---
+
+### Test B7 — Add Restaurant button
+
+1. Go to **Restaurants**.
+
+**Expected:** an orange **Add Restaurant** button floating at the bottom right.
+
+2. Scroll the list down.
+
+**Expected:** the button **stays on screen**. It used to scroll away.
+
+3. Tap it.
+
+**Expected:** the Add Restaurant form opens.
+
+---
+
+### Test B8 — Marketplace pictures
+
+1. Go to **Marketplace**.
+
+**Expected:** every card has a picture. Items without a photo show a drawn
+card matching the item -- a calculator item shows calculator art, earbuds show
+audio art, a physics book shows a book cover.
+
+**Must NOT appear:** a plain grey square, or a "broken image" icon.
+
+2. Turn Wi-Fi off and hard-refresh (`Ctrl+Shift+R`).
+
+**Expected:** photos that cannot load are replaced by the drawn cards, not by
+error icons.
+
+3. Check a card with a long product name.
+
+**Expected:** the name uses at most two lines and the **price is still
+visible** at the bottom of the card. It used to be clipped off.
+
+---
+
+### Test B9 — Robot pictures
+
+1. **Jobs** -> **CV & job matching**.
+
+**Expected:** the blue banner shows the AI robot on the right of the text.
+
+2. **Marketplace** -> **AI Market Assistant**.
+
+**Expected:** a blue banner with the robot at the top.
+
+3. Drag the browser window **narrow** (phone width).
+
+**Expected:** the robot **disappears** and the text uses the full width. That
+is deliberate -- on a narrow phone the robot would squeeze the heading into a
+column of single words.
+
+---
+
+### Test B10 — Nothing is cut off on a phone
+
+This is the one that covers the screenshots you sent.
+
+1. Make the browser window **narrow**, about a phone's width.
+2. Visit each of: **Tickets**, **Micro Gigs**, **Career Passport**,
+   **Sign Up**, **Marketplace**, **Lost & Found**.
+
+**Expected on every screen:** no text runs off the right edge, no
+**yellow-and-black striped bars**, and every button is fully visible.
+
+3. Check specific spots:
+   - Tickets: the price and **Buy ticket** button are both fully visible.
+   - Micro Gigs: the company name and the duration badge both fit.
+   - Career Passport: **Passport ID** and **VERIFIED STUDENT** both readable.
+   - Sign Up: *"Already have an account? Login"* wraps rather than clipping.
+
+> **The automatic version of this test:** `flutter test` now includes
+> `responsive_sweep_test.dart`, which checks 12 screens at 3 phone widths
+> automatically. If it says *All tests passed!*, no screen is clipping.
+
+---
+
 ## Part 6 — Quick reference
 
 | I want to… | Command |

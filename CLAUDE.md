@@ -189,8 +189,20 @@ Baseline on arrival: analyzer clean, **2 of 38 tests failing**.
 | 7 | **No auth persistence.** `MaterialApp` hardcoded `initialRoute: '/login'`, so the app opened on the login form even when Firebase held a valid session -- a student who signed in yesterday had to type their password again today. Replaced with an `AuthGate` that waits for the stored session and opens `MainLayout` or `RecruiterDashboardScreen` by role, with a logo splash while the session is read. Treats an unavailable Firebase as signed out so widget tests still see the login screen. | `c26b765` |
 | 6 | **Real admin panel.** The old screen was a hardcoded list of five emails, *and it was unreachable* — the dashboard pushes `/admin` but `main.dart` had no such route, so admins landed on the login screen. Added the route and built the three-tab panel described above, plus `AdminService`, the Firestore rule changes, blocked-account sign-out, and `test/admin_service_test.dart`. | `10a1683` |
 
-Suite after this work: **59 passing, 0 failing**; `flutter analyze` clean.
-All eight commits pushed to `origin/master`.
+| 8 | **Girls hostel had almost no rooms.** The screen showed 4 hardcoded "reference rooms" on the 2nd floor and said every other floor was "pending". Modelled the real building: 23 rooms on each of 3 floors (69, "60+"), 3 six-sharing and 20 four-sharing per floor, room numbers encoding floor+room (0207). New `services/girls_hostel_inventory.dart` holds structure, published rates and free-bed counts, derived from the room number so availability does not reshuffle while scrolling. |
+| 9 | **Add Restaurant was under the fold.** The button sat inline below the search box and filter chips, so adding a place meant scrolling first. Moved to a pinned `FloatingActionButton.extended`. |
+| 10 | **Marketplace showed error icons for missing photos.** A listing with no `imageUrl` rendered a bare grey icon, and a failed URL rendered a broken-image icon. Both now draw `MarketplacePreviewArt`, picked from the title and category by the new `kindFor()`. Added calculator, audio, laptop, bag and textbook artwork. |
+| 11 | **Two AI screens had no artwork.** The CV & job matching banner was text on a blue rectangle; the AI Market Assistant had no hero at all. Both now show the AI robot beside the copy, dropped below 420px. |
+| 12 | **Nine overflows clipped content on phones.** A sweep at 320/360/430px found Text widgets sitting directly in Rows with no flex across tickets, micro gigs, career passport and signup, plus a vertical clip in the marketplace grid (tiles pinned to 210px needed 224 once a title wrapped). Fixed with Expanded/Flexible/Wrap and a taller tile. |
+
+Suite after this work: **120 passing, 0 failing**; `flutter analyze` clean.
+All commits pushed to `origin/master`.
+
+**Responsive testing.** `test/responsive_sweep_test.dart` pumps every screen
+that builds without Firebase at 320, 360 and 430px and fails on any overflow.
+Add new screens to its `_screens` map. Screens that touch FirebaseAuth or
+Firestore during build (Jobs home, Dashboard, Profile, recruiter) cannot be
+covered without Firebase mocks and are deliberately absent.
 
 ---
 
