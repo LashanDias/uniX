@@ -114,19 +114,19 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: const BoxConstraints(maxWidth: 380),
               child: Column(
                 children: [
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 56),
                   Image.asset(
                     'assets/images/unix_logo.png',
-                    width: 96,
-                    height: 96,
+                    width: 88,
+                    height: 88,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
                   const Text(
-                    'Welcome to UniTrade',
+                    'Welcome! 👋',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textPrimary,
@@ -134,18 +134,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Your Smart Student Marketplace',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(28),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(30),
+                      color: const Color(0xFFE8EDF5),
+                      borderRadius: BorderRadius.circular(26),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: 'Student or recruiter email',
+                            hintText: 'Enter your email',
                             fillColor: Colors.white,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 18,
@@ -328,8 +323,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  // Wrap, not Row: at narrow widths or with a large system
+                  // font the prompt and the link no longer fit on one line.
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text(
                         "Don't have an account? ",
