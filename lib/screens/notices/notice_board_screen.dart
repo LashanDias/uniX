@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../services/event_date_parser.dart';
 import '../../services/notice_board_service.dart';
 import '../../widgets/app_back_button.dart';
+import '../../widgets/safe_network_image.dart';
 
 /// Campus notice board: announcements students should see.
 ///
@@ -218,7 +219,7 @@ class _NoticeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: AppColors.cardBg,
       borderRadius: BorderRadius.circular(16),
@@ -226,9 +227,31 @@ class _NoticeCard extends StatelessWidget {
         color: notice.pinned ? AppColors.primary : AppColors.border,
       ),
     ),
+    clipBehavior: Clip.antiAlias,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (notice.hasImage) ...[
+          SafeNetworkImage(
+            url: notice.imageUrl,
+            height: 170,
+            placeholderIcon: Icons.campaign_outlined,
+            placeholderLabel: notice.title,
+          ),
+          if (notice.caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(2, 8, 2, 0),
+              child: Text(
+                notice.caption,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textLight,
+                ),
+              ),
+            ),
+          const SizedBox(height: 10),
+        ],
         Wrap(
           spacing: 8,
           runSpacing: 6,
@@ -372,6 +395,8 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _body = TextEditingController();
+  final _imageUrl = TextEditingController();
+  final _caption = TextEditingController();
   String _category = Notice.categories.last;
   bool _pinned = false;
   bool _saving = false;
@@ -380,6 +405,8 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
   void dispose() {
     _title.dispose();
     _body.dispose();
+    _imageUrl.dispose();
+    _caption.dispose();
     super.dispose();
   }
 
@@ -393,6 +420,8 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
         body: _body.text,
         category: _category,
         pinned: _pinned,
+        imageUrl: _imageUrl.text,
+        caption: _caption.text,
       );
       if (mounted) Navigator.pop(context, true);
     } on StateError catch (error) {
@@ -446,6 +475,33 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
                   validator: (value) => (value ?? '').trim().isEmpty
                       ? 'Enter the notice text.'
                       : null,
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _imageUrl,
+                  maxLength: 500,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'Flyer image link (optional)',
+                    hintText: 'https://...',
+                  ),
+                  validator: (value) {
+                    final text = (value ?? '').trim();
+                    if (text.isEmpty) return null;
+                    final uri = Uri.tryParse(text);
+                    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+                      return 'Enter a full link starting with https://';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _caption,
+                  maxLength: 140,
+                  decoration: const InputDecoration(
+                    labelText: 'Caption under the flyer (optional)',
+                    hintText: 'Hackathon flyer - teams of up to four',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(

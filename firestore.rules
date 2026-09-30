@@ -79,7 +79,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isAdmin()
         && request.resource.data.keys().hasOnly(['title', 'body', 'category',
-          'pinned', 'postedBy', 'postedAt'])
+          'pinned', 'postedBy', 'postedAt', 'imageUrl', 'caption'])
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 120
@@ -91,6 +91,10 @@ service cloud.firestore {
         && request.resource.data.pinned is bool
         && request.resource.data.postedBy is string
         && request.resource.data.postedBy.size() <= 200
+        && request.resource.data.imageUrl is string
+        && request.resource.data.imageUrl.size() <= 500
+        && request.resource.data.caption is string
+        && request.resource.data.caption.size() <= 140
         && request.resource.data.postedAt == request.time;
       allow update, delete: if isAdmin();
     }

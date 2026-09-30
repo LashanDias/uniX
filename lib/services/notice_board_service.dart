@@ -15,6 +15,8 @@ class Notice {
     required this.postedBy,
     required this.postedAt,
     this.pinned = false,
+    this.imageUrl = '',
+    this.caption = '',
   });
 
   final String id;
@@ -26,6 +28,14 @@ class Notice {
 
   /// Pinned notices stay at the top of the board.
   final bool pinned;
+
+  /// Flyer or poster for the notice. Empty when it is text only.
+  final String imageUrl;
+
+  /// One line under the flyer, e.g. what the poster shows.
+  final String caption;
+
+  bool get hasImage => imageUrl.trim().isNotEmpty;
 
   /// Categories a notice can be filed under.
   static const categories = [
@@ -66,6 +76,7 @@ class Notice {
     if (needle.isEmpty) return true;
     return title.toLowerCase().contains(needle) ||
         body.toLowerCase().contains(needle) ||
+        caption.toLowerCase().contains(needle) ||
         category.toLowerCase().contains(needle);
   }
 
@@ -80,6 +91,8 @@ class Notice {
       postedAt:
           (data['postedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       pinned: data['pinned'] == true,
+      imageUrl: (data['imageUrl'] ?? '').toString(),
+      caption: (data['caption'] ?? '').toString(),
     );
   }
 }
@@ -109,6 +122,10 @@ class NoticeBoardService {
         postedBy: 'Examinations Office',
         postedAt: now.subtract(const Duration(hours: 3)),
         pinned: true,
+        imageUrl:
+            'https://images.unsplash.com/photo-1434030216411-0b793f4b4173'
+            '?auto=format&fit=crop&w=900&q=80',
+        caption: 'Results notice from the Examinations Office',
       ),
       Notice(
         id: 'sample-2',
@@ -118,6 +135,10 @@ class NoticeBoardService {
         category: 'Facilities',
         postedBy: 'Library',
         postedAt: now.subtract(const Duration(hours: 9)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1521587760476-6c12a4b040da'
+            '?auto=format&fit=crop&w=900&q=80',
+        caption: 'Extended opening hours for study week',
       ),
       Notice(
         id: 'sample-3',
@@ -127,6 +148,10 @@ class NoticeBoardService {
         category: 'Events',
         postedBy: 'Tech Society',
         postedAt: now.subtract(const Duration(days: 1)),
+        imageUrl:
+            'https://images.unsplash.com/photo-1504384308090-c894fdcc538d'
+            '?auto=format&fit=crop&w=900&q=80',
+        caption: 'Hackathon flyer - teams of up to four',
       ),
       Notice(
         id: 'sample-4',
@@ -189,6 +214,8 @@ class NoticeBoardService {
     required String body,
     required String category,
     bool pinned = false,
+    String imageUrl = '',
+    String caption = '',
   }) async {
     if (!canPost) {
       throw StateError('Only an admin can post to the notice board.');
@@ -206,6 +233,8 @@ class NoticeBoardService {
       'body': trimmedBody,
       'category': category,
       'pinned': pinned,
+      'imageUrl': imageUrl.trim(),
+      'caption': caption.trim(),
       'postedBy': user?.displayName?.trim().isNotEmpty == true
           ? user!.displayName!.trim()
           : (user?.email ?? 'Campus admin'),
