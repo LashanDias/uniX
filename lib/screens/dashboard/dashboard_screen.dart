@@ -6,6 +6,75 @@ import '../../services/activity_service.dart';
 import '../../widgets/dashboard_search.dart';
 import '../../core/utils/time_ago.dart';
 
+/// Sections in the Quick Access strip, in the order they are shown.
+///
+/// Each entry is (label, icon, icon colour, tile colour, what to open).
+final _quickAccess =
+    <(
+      String,
+      IconData,
+      Color,
+      Color,
+      void Function(BuildContext, void Function(int)),
+    )>[
+      (
+        'Notes',
+        Icons.assignment_outlined,
+        AppColors.primary,
+        const Color(0xFFEAF1FF),
+        (context, goToTab) => goToTab(1),
+      ),
+      (
+        'Market',
+        Icons.storefront_outlined,
+        const Color(0xFFFF8A00),
+        const Color(0xFFFFF4E3),
+        (context, goToTab) => goToTab(2),
+      ),
+      (
+        'Restaurants',
+        Icons.restaurant_outlined,
+        Colors.purple,
+        const Color(0xFFF3E8FF),
+        (context, goToTab) => Navigator.pushNamed(context, '/restaurants'),
+      ),
+      (
+        'Job',
+        Icons.work_outline,
+        Colors.deepPurple,
+        const Color(0xFFF3E8FF),
+        (context, goToTab) => goToTab(3),
+      ),
+      (
+        'Lost & Found',
+        Icons.search,
+        Colors.teal,
+        const Color(0xFFE0F2F1),
+        (context, goToTab) => Navigator.pushNamed(context, '/lost_found'),
+      ),
+      (
+        'Hostel',
+        Icons.apartment_outlined,
+        Colors.orange,
+        const Color(0xFFFFF4E3),
+        (context, goToTab) => Navigator.pushNamed(context, '/hostels'),
+      ),
+      (
+        'Notice Board',
+        Icons.campaign_outlined,
+        Colors.redAccent,
+        const Color(0xFFFFE9E9),
+        (context, goToTab) => Navigator.pushNamed(context, '/notice_board'),
+      ),
+      (
+        'Tickets',
+        Icons.confirmation_number_outlined,
+        const Color(0xFF0E7490),
+        const Color(0xFFE0F7FA),
+        (context, goToTab) => Navigator.pushNamed(context, '/tickets'),
+      ),
+    ];
+
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateTab;
 
@@ -131,7 +200,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   const Text(
-                    'Trending on Campus Today',
+                    'Quick Access',
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 16,
@@ -139,186 +208,29 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // A horizontal strip rather than a grid: it keeps the cards
+                  // big enough to read on a phone, and new sections can be
+                  // added without pushing everything else down the page.
                   SizedBox(
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisExtent: 150,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      itemCount: 7,
+                    height: 168,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      itemCount: _quickAccess.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
                       itemBuilder: (context, index) {
-                        final items = [
-                          (
-                            'Notes',
-                            Icons.assignment_outlined,
-                            AppColors.primary,
-                            const Color(0xFFEAF1FF),
-                            () => onNavigateTab(1),
-                          ),
-                          (
-                            'Market',
-                            Icons.storefront_outlined,
-                            const Color(0xFFFF8A00),
-                            const Color(0xFFFFF4E3),
-                            () => onNavigateTab(2),
-                          ),
-                          (
-                            'Restaurants',
-                            Icons.restaurant_outlined,
-                            Colors.purple,
-                            const Color(0xFFF3E8FF),
-                            () => Navigator.pushNamed(context, '/restaurants'),
-                          ),
-                          (
-                            'Job',
-                            Icons.work_outline,
-                            Colors.deepPurple,
-                            const Color(0xFFF3E8FF),
-                            () => onNavigateTab(3),
-                          ),
-                          (
-                            'Lost & Found',
-                            Icons.search,
-                            Colors.teal,
-                            const Color(0xFFE0F2F1),
-                            () => Navigator.pushNamed(context, '/lost_found'),
-                          ),
-                          (
-                            'Hostel',
-                            Icons.apartment_outlined,
-                            Colors.orange,
-                            const Color(0xFFFFF4E3),
-                            () => Navigator.pushNamed(context, '/hostels'),
-                          ),
-                          (
-                            'Notice Board',
-                            Icons.campaign_outlined,
-                            Colors.redAccent,
-                            const Color(0xFFFFE9E9),
-                            () =>
-                                Navigator.pushNamed(context, '/notice_board'),
-                          ),
-                        ];
-                        final item = items[index];
+                        final item = _quickAccess[index];
                         return SizedBox(
-                          width: 135,
+                          width: 132,
                           child: _buildQuickCard(
                             title: item.$1,
                             icon: item.$2,
                             iconColor: item.$3,
                             backgroundColor: item.$4,
-                            onTap: item.$5,
+                            onTap: () => item.$5(context, onNavigateTab),
                           ),
                         );
                       },
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF8EF),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.verified_user_outlined,
-                          color: AppColors.success,
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'SLTC verified community • Secure peer-to-peer payments',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4E3),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.campaign_outlined, color: AppColors.warning),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Campus Partner • PrintHub: 10% off note printing',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  InkWell(
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/ai_market_assistant'),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 130,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            flex: 5,
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 24),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'AI Assistant',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Get smart suggestions and\ninstant help.',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 4,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 5, 8, 5),
-                              child: Image.asset(
-                                'assets/images/ai_bot.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -369,7 +281,6 @@ class DashboardScreen extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        height: 200,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F7FF),

@@ -95,11 +95,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Apple and LinkedIn sign-in are not connected yet.
+  ///
+  /// Enabling either needs an account with that provider and the matching
+  /// Firebase configuration, which is not something the app can do by itself.
+  /// Until then the buttons are visibly disabled and say so in plain words,
+  /// rather than looking live and failing.
   void _showProviderSetupMessage(String provider) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '$provider sign-in needs provider OAuth setup before it can be enabled.',
+          '$provider sign-in is not available yet. '
+          'Use your SLTC email, or continue with Google.',
         ),
       ),
     );
@@ -301,11 +308,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             _socialIconButton(
                               icon: Icons.apple,
                               color: Colors.black,
+                              enabled: false,
                               onTap: () => _showProviderSetupMessage('Apple'),
                             ),
                             const SizedBox(width: 16),
                             _socialIconButton(
                               asset: 'assets/images/linkedin_logo.png',
+                              enabled: false,
                               onTap: () =>
                                   _showProviderSetupMessage('LinkedIn'),
                             ),
@@ -375,8 +384,11 @@ class _LoginScreenState extends State<LoginScreen> {
     Color color = AppColors.primary,
     String? asset,
     required VoidCallback onTap,
+    bool enabled = true,
   }) {
-    return InkWell(
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -399,6 +411,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ? Image.asset(asset, width: 20, height: 20, fit: BoxFit.contain)
             : Icon(icon, color: color, size: 24),
       ),
+    ),
     );
   }
 }
