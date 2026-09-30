@@ -112,6 +112,15 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
         .toList();
     return Scaffold(
       backgroundColor: foodCanvas,
+      // A pinned button, not one inline under the filter chips: on a phone
+      // that one sat below the fold, so adding a place meant scrolling first.
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _add,
+        backgroundColor: foodAccent,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_business_outlined),
+        label: const Text('Add Restaurant'),
+      ),
       appBar: AppBar(
         leading: const AppBackButton(),
         title: const Text('Restaurants & Canteens'),
@@ -145,7 +154,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             Text(
                               'THE CAMPUS FOOD GUIDE',
                               style: TextStyle(
-                                color: Color(0xFFBFD8BA),
+                                color: Color(0xFFFFFFFF),
                                 fontSize: 11,
                                 letterSpacing: 2,
                                 fontWeight: FontWeight.bold,
@@ -165,7 +174,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                             Text(
                               'Local favourites, café breaks and your SLTC canteens.',
                               style: TextStyle(
-                                color: Color(0xFFE0E8DD),
+                                color: Color(0xFFEBF0FF),
                                 height: 1.5,
                               ),
                             ),
@@ -209,25 +218,12 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                                   label: Text(label),
                                   selected: _filter == label,
                                   showCheckmark: false,
-                                  selectedColor: const Color(0xFFDCE8DC),
+                                  selectedColor: const Color(0xFFEBF0FF),
                                   onSelected: (_) =>
                                       setState(() => _filter = label),
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      FilledButton.icon(
-                        onPressed: _add,
-                        icon: const Icon(Icons.add_business_outlined),
-                        label: const Text('Add Restaurant'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: foodAccent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 14,
-                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -380,7 +376,7 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                     onPressed: () => _open(place, menu: true),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: foodInk,
-                      side: const BorderSide(color: Color(0xFFD9DED8)),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
                     ),
                     icon: const Icon(Icons.restaurant_menu, size: 18),
                     label: const Text('View menu'),
