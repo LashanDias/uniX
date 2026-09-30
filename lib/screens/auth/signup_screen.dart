@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/auth_error_messages.dart';
 import '../../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -95,11 +96,11 @@ class _SignupScreenState extends State<SignupScreen> {
           Navigator.pushReplacementNamed(context, route);
         }
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google sign-up could not be completed.'),
+          SnackBar(
+            content: Text(socialAuthMessage(error, provider: 'Google')),
           ),
         );
       }
@@ -281,18 +282,32 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
+                        // Apple sign-up is not connected. It used to be an
+                        // empty callback, so the button did nothing at all
+                        // and gave no reason.
                         child: OutlinedButton.icon(
-                          onPressed: () {},
+                          onPressed: _isLoading
+                              ? null
+                              : () => ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Apple sign-up is not available '
+                                          'yet. Use your email, or continue '
+                                          'with Google.',
+                                        ),
+                                      ),
+                                    ),
                           icon: const Icon(
                             Icons.apple,
                             size: 20,
-                            color: Colors.black,
+                            color: Colors.black45,
                           ),
                           label: const Text(
                             'Apple',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textPrimary,
+                              color: AppColors.textLight,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(

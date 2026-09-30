@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/auth_error_messages.dart';
 import '../../services/auth_service.dart';
 import 'signup_screen.dart';
 
@@ -82,11 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, route);
         }
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google sign-in could not be completed.'),
+          SnackBar(
+            content: Text(socialAuthMessage(error, provider: 'Google')),
           ),
         );
       }
