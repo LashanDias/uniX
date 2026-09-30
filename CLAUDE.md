@@ -195,8 +195,25 @@ Baseline on arrival: analyzer clean, **2 of 38 tests failing**.
 | 11 | **Two AI screens had no artwork.** The CV & job matching banner was text on a blue rectangle; the AI Market Assistant had no hero at all. Both now show the AI robot beside the copy, dropped below 420px. |
 | 12 | **Nine overflows clipped content on phones.** A sweep at 320/360/430px found Text widgets sitting directly in Rows with no flex across tickets, micro gigs, career passport and signup, plus a vertical clip in the marketplace grid (tiles pinned to 210px needed 224 once a title wrapped). Fixed with Expanded/Flexible/Wrap and a taller tile. |
 
-Suite after this work: **120 passing, 0 failing**; `flutter analyze` clean.
+| 13 | **Notice board with event dates.** New section for campus flyers. `EventDateParser` reads dates/times out of poster prose ("29th November 2025", "2.00 PM - 4.00 aM", "29/11/2025"), refuses impossible dates, and will not read "RBGF 3" as a time. The board hides finished events, and orders pinned → today → tomorrow → this week → later. Admin-only posting, enforced in rules. |
+| 14 | **Recent Activity was fake.** Four hardcoded rows always claiming a note was uploaded "2 minutes ago". Now merges the newest notes, listings, vacancies and notices from Firestore. |
+| 15 | **No Settings screen existed.** Added one: master notification switch plus per-area switches, saved on device; account shortcuts; sign out. |
+| 16 | **AI Market Assistant gave one canned reply.** Every message, including "Write Description", returned the same price line. New `MarketAiService` detects intent and item category. Also fixed a latent crash: a delayed `setState` with no `mounted` check. |
+| 17 | **Dashboard search did nothing.** The field had no controller and no callbacks. Now searches 12 destinations by label and related words ("food" → Restaurants). |
+| 18 | **Canteen menus had no ordering.** Added cart, quantities, checkout and a collection code. One venue at a time. No payment taken — pay at the counter. |
+| 19 | **Dead sign-in buttons.** Apple and LinkedIn showed "needs provider OAuth setup" to students. Now visibly dimmed with plain wording. Enabling them needs an Apple Developer account and a LinkedIn OAuth app. |
+| 20 | **Quick Access grew a second row.** Converted to a horizontal strip. |
+| 21 | **Emoji rendered as empty boxes on web.** `useColorEmoji: false` in flutter_bootstrap.js. |
+| 22 | **Short notes from a PDF.** `NoteSummarizer` condenses a lecture PDF/DOCX/TXT into revision notes, drawn on a ruled page in a handwriting face. Extractive, so it never invents a fact. |
+
+Suite after this work: **205 passing, 0 failing**; `flutter analyze` clean.
 All commits pushed to `origin/master`.
+
+**Serving the build.** Use `python tool/serve_web.py`, not a plain static
+server: the release bundle ships a service worker and the browser will keep
+serving the previous build after a rebuild, which cost real debugging time this
+session (artwork appeared missing while the asset returned 200). That script
+sends `no-store` so a normal refresh always shows the latest build.
 
 **Responsive testing.** `test/responsive_sweep_test.dart` pumps every screen
 that builds without Firebase at 320, 360 and 430px and fails on any overflow.
