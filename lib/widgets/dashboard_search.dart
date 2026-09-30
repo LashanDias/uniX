@@ -93,6 +93,19 @@ const kSearchDestinations = <SearchDestination>[
     route: '/lost_found',
   ),
   SearchDestination(
+    label: 'Notice Board',
+    icon: Icons.campaign_outlined,
+    keywords: ['notice', 'notices', 'board', 'announcement', 'flyer',
+      'event', 'agm', 'club'],
+    route: '/notice_board',
+  ),
+  SearchDestination(
+    label: 'Settings',
+    icon: Icons.settings_outlined,
+    keywords: ['setting', 'settings', 'notification', 'preferences'],
+    route: '/settings',
+  ),
+  SearchDestination(
     label: 'Tickets',
     icon: Icons.confirmation_number_outlined,
     keywords: ['ticket', 'tickets', 'event', 'booking'],

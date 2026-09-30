@@ -1,114 +1,129 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
-class RecentActivityScreen extends StatelessWidget {
-  const RecentActivityScreen({super.key});
+import '../../core/constants/app_colors.dart';
+import '../../services/activity_service.dart';
+import '../../widgets/app_back_button.dart';
+
+/// What has actually happened in the app recently.
+class RecentActivityScreen extends StatefulWidget {
+  const RecentActivityScreen({super.key, this.loader});
+
+  /// Injectable for tests; defaults to the live Firestore query.
+  final Future<List<ActivityEvent>> Function()? loader;
 
   @override
-  Widget build(BuildContext context) {
-    final activities = [
-      _ActivityItem(
-        title: 'New note uploaded',
-        subtitle: '2 minutes ago',
-        icon: Icons.note_add_outlined,
-      ),
-      _ActivityItem(
-        title: 'Hostel booking confirmed',
-        subtitle: '18 minutes ago',
-        icon: Icons.home_outlined,
-      ),
-      _ActivityItem(
-        title: 'Marketplace item sold',
-        subtitle: '1 hour ago',
-        icon: Icons.storefront_outlined,
-      ),
-      _ActivityItem(
-        title: 'New job match found',
-        subtitle: '3 hours ago',
-        icon: Icons.work_outline,
-      ),
-    ];
+  State<RecentActivityScreen> createState() => _RecentActivityScreenState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Recent Activity'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+class _RecentActivityScreenState extends State<RecentActivityScreen> {
+  late Future<List<ActivityEvent>> _future = _load();
+
+  Future<List<ActivityEvent>> _load() =>
+      (widget.loader ?? ActivityService.recent)();
+
+  Future<void> _refresh() async {
+    final future = _load();
+    setState(() => _future = future);
+    await future;
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.white,
+    appBar: AppBar(
+      leading: const AppBackButton(),
+      title: const Text('Recent Activity'),
+      actions: [
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: _refresh,
+          icon: const Icon(Icons.refresh),
         ),
-      ),
-      body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(20),
-          itemCount: activities.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final activity = activities[index];
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      activity.icon,
-                      color: AppColors.primary,
-                      size: 22,
+      ],
+    ),
+    body: SafeArea(
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        child: FutureBuilder<List<ActivityEvent>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final events = snapshot.data ?? const <ActivityEvent>[];
+            if (events.isEmpty) {
+              return ListView(
+                padding: const EdgeInsets.all(28),
+                children: const [
+                  SizedBox(height: 60),
+                  Icon(
+                    Icons.history_outlined,
+                    size: 44,
+                    color: AppColors.textLight,
+                  ),
+                  SizedBox(height: 14),
+                  Text(
+                    'Nothing has happened yet',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          activity.title,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          activity.subtitle,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
+                  SizedBox(height: 6),
+                  Text(
+                    'Upload a note, post an item or add a vacancy and it will '
+                    'show up here. Pull down to refresh.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
-              ),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(20),
+              itemCount: events.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) =>
+                  _ActivityTile(event: events[index]),
             );
           },
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _ActivityItem {
-  const _ActivityItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
+class _ActivityTile extends StatelessWidget {
+  const _ActivityTile({required this.event});
 
-  final String title;
-  final String subtitle;
-  final IconData icon;
+  final ActivityEvent event;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    clipBehavior: Clip.antiAlias,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: AppColors.border),
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: CircleAvatar(
+        backgroundColor: AppColors.primaryLight,
+        child: Icon(event.icon, color: AppColors.primary, size: 20),
+      ),
+      title: Text(
+        event.title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+      subtitle: Text(
+        event.age(),
+        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      ),
+      onTap: () => Navigator.pushNamed(context, event.route),
+    ),
+  );
 }

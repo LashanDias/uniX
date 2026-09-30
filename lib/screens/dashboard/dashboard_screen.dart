@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/auth_service.dart';
+import '../../services/activity_service.dart';
 import '../../widgets/dashboard_search.dart';
+import '../../core/utils/time_ago.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigateTab;
@@ -49,12 +51,19 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Notifications',
                         icon: const Icon(
                           Icons.notifications_none_outlined,
-                          size: 28,
+                          size: 26,
                         ),
                         onPressed: () =>
                             Navigator.pushNamed(context, '/notifications'),
+                      ),
+                      IconButton(
+                        tooltip: 'Settings',
+                        icon: const Icon(Icons.settings_outlined, size: 26),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/settings'),
                       ),
                     ],
                   ),
@@ -142,7 +151,7 @@ class DashboardScreen extends StatelessWidget {
                             mainAxisSpacing: 12,
                           ),
                       padding: const EdgeInsets.symmetric(horizontal: 4),
-                      itemCount: 6,
+                      itemCount: 7,
                       itemBuilder: (context, index) {
                         final items = [
                           (
@@ -186,6 +195,14 @@ class DashboardScreen extends StatelessWidget {
                             Colors.orange,
                             const Color(0xFFFFF4E3),
                             () => Navigator.pushNamed(context, '/hostels'),
+                          ),
+                          (
+                            'Notice Board',
+                            Icons.campaign_outlined,
+                            Colors.redAccent,
+                            const Color(0xFFFFE9E9),
+                            () =>
+                                Navigator.pushNamed(context, '/notice_board'),
                           ),
                         ];
                         final item = items[index];
@@ -331,55 +348,7 @@ class DashboardScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x140F172A),
-                          blurRadius: 12,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.note_add_outlined,
-                          color: AppColors.primary,
-                          size: 26,
-                        ),
-                        SizedBox(width: 18),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'New note uploaded',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              '2 minutes ago',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  const DashboardRecentActivity(),
                 ],
               ),
             ),
@@ -453,4 +422,90 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The single most recent thing that happened, on the dashboard.
+///
+/// This card used to be hardcoded: it always claimed a note was uploaded
+/// "2 minutes ago", however long the app had been sitting there.
+class DashboardRecentActivity extends StatefulWidget {
+  const DashboardRecentActivity({super.key, this.loader});
+
+  /// Injectable for tests; defaults to the live Firestore query.
+  final Future<List<ActivityEvent>> Function()? loader;
+
+  @override
+  State<DashboardRecentActivity> createState() =>
+      _DashboardRecentActivityState();
+}
+
+class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
+  late final Future<List<ActivityEvent>> _future =
+      (widget.loader ?? ActivityService.recent)();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<ActivityEvent>>(
+    future: _future,
+    builder: (context, snapshot) {
+      final events = snapshot.data ?? const <ActivityEvent>[];
+      final latest = events.isEmpty ? null : events.first;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x140F172A),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              latest?.icon ?? Icons.history_outlined,
+              color: AppColors.primary,
+              size: 26,
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    latest?.title ??
+                        (snapshot.connectionState == ConnectionState.waiting
+                            ? 'Loading activity...'
+                            : 'Nothing has happened yet'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    latest == null
+                        ? 'Upload a note or post an item to get started.'
+                        : timeAgo(latest.happenedAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
