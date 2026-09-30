@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/restaurant.dart';
+import '../../services/food_order_service.dart';
 import '../../widgets/app_back_button.dart';
+import 'food_cart_screen.dart';
 import '../../services/restaurant_store.dart';
 import 'restaurant_widgets.dart';
 
@@ -93,6 +95,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       title: const Text('Restaurant details'),
       backgroundColor: foodCanvas,
     ),
+    bottomNavigationBar: const _CartBar(),
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -384,9 +387,61 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
               ),
           ],
         ),
+        const SizedBox(height: 10),
+        // Ordering control. The menu previously listed prices with no way to
+        // actually order anything.
+        ValueListenableBuilder<List<OrderLine>>(
+          valueListenable: FoodOrderService.cart,
+          builder: (context, _, _) {
+            final quantity = FoodOrderService.quantityOf(food);
+            if (quantity == 0) {
+              return OutlinedButton.icon(
+                onPressed: () => _addToCart(food),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add to order'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: foodAccent,
+                  side: const BorderSide(color: foodAccent),
+                ),
+              );
+            }
+            return Row(
+              children: [
+                IconButton(
+                  tooltip: 'Remove one',
+                  onPressed: () => FoodOrderService.removeOne(food),
+                  icon: const Icon(Icons.remove_circle_outline),
+                  color: foodAccent,
+                ),
+                Text(
+                  '$quantity',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Add one',
+                  onPressed: () => _addToCart(food),
+                  icon: const Icon(Icons.add_circle_outline),
+                  color: foodAccent,
+                ),
+              ],
+            );
+          },
+        ),
       ],
     ),
   );
+
+  void _addToCart(RestaurantFood food) {
+    final kept = FoodOrderService.add(food, restaurantName: place.name);
+    if (!kept) {
+      // The cart holds one venue at a time, so say what happened rather than
+      // silently dropping the previous order.
+      _message('Your previous order was from another venue, so it was cleared.');
+    }
+  }
 
   List<Widget> _reviews() => [
     const Text(
@@ -425,4 +480,42 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
       () => _open(place.mapsUrl),
     ),
   ];
+}
+
+/// Running total, pinned to the bottom while there is something in the cart.
+class _CartBar extends StatelessWidget {
+  const _CartBar();
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<List<OrderLine>>(
+        valueListenable: FoodOrderService.cart,
+        builder: (context, lines, _) {
+          if (lines.isEmpty) return const SizedBox.shrink();
+          final count = FoodOrderService.itemCount;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: FilledButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FoodCartScreen()),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: foodAccent,
+                  minimumSize: const Size(0, 52),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('$count ${count == 1 ? 'item' : 'items'}'),
+                    const Text('View order'),
+                    Text('Rs. ${FoodOrderService.cartTotal.toStringAsFixed(0)}'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
 }

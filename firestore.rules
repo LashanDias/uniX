@@ -95,6 +95,30 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Canteen orders: a student reads and places their own; nobody else's.
+    match /foodOrders/{id} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSLTCUser()
+        && request.resource.data.keys().hasOnly(['userId', 'restaurantName',
+          'lines', 'total', 'status', 'note', 'collectionCode', 'placedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.restaurantName is string
+        && request.resource.data.restaurantName.size() > 0
+        && request.resource.data.lines is list
+        && request.resource.data.lines.size() > 0
+        && request.resource.data.lines.size() <= 40
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && request.resource.data.status == 'Placed'
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 200
+        && request.resource.data.collectionCode is string
+        && request.resource.data.placedAt == request.time;
+      // Only an admin moves an order along; a student cannot mark it Ready.
+      allow update, delete: if isAdmin();
+    }
+
     match /products/{id} {
       allow read: if isSignedIn();
       allow create: if isSLTCUser()
