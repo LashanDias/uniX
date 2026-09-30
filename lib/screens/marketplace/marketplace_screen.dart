@@ -265,9 +265,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: product.imageUrl.startsWith('art:')
-                        ? MarketplacePreviewArt(kind: product.imageUrl.substring(4))
+                        ? MarketplacePreviewArt(
+                            kind: product.imageUrl.substring(4),
+                          )
+                        // No photo, or one that fails to load, falls back to
+                        // drawn artwork chosen from the title and category
+                        // rather than a bare grey icon.
                         : product.imageUrl.isEmpty
-                        ? const Icon(Icons.image_outlined, size: 48)
+                        ? MarketplacePreviewArt(
+                            kind: MarketplacePreviewArt.kindFor(
+                              product.title,
+                              product.category,
+                            ),
+                          )
                         : product.id.startsWith('preview-')
                         ? Image.asset(product.imageUrl, fit: BoxFit.contain)
                         : Image.network(
@@ -276,7 +286,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                             height: 104,
                             fit: BoxFit.contain,
                             errorBuilder: (_, error, stackTrace) =>
-                                const Icon(Icons.broken_image_outlined),
+                                MarketplacePreviewArt(
+                                  kind: MarketplacePreviewArt.kindFor(
+                                    product.title,
+                                    product.category,
+                                  ),
+                                ),
                           ),
                   ),
                 ),

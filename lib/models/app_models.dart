@@ -7,6 +7,8 @@ class NoteItem {
   final String description;
   final String ownerId;
   final String fileUrl;
+  final String degree;
+  final String topic;
 
   NoteItem({
     required this.id,
@@ -17,6 +19,8 @@ class NoteItem {
     required this.description,
     this.ownerId = '',
     this.fileUrl = '',
+    this.degree = '',
+    this.topic = '',
   });
 }
 

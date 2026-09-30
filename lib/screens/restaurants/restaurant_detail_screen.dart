@@ -80,7 +80,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 42),
           foregroundColor: foodInk,
-          side: const BorderSide(color: Color(0xFFD9DED8)),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
           padding: const EdgeInsets.symmetric(horizontal: 14),
         ),
       );
@@ -174,7 +174,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                             label: Text(label),
                             selected: _tab == index,
                             showCheckmark: false,
-                            selectedColor: const Color(0xFFDCE8DC),
+                            selectedColor: const Color(0xFFEBF0FF),
                             onSelected: (_) => setState(() => _tab = index),
                           ),
                         ),
@@ -341,7 +341,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFE8E5DE)),
+      border: Border.all(color: const Color(0xFFE2E8F0)),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,

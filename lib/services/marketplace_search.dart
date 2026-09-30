@@ -11,9 +11,9 @@ List<ProductItem> marketplacePreview() => [
     ('Student smartphone', 'Electronics', 35000.0, 'art:phone'),
     ('DSLR camera', 'Electronics', 65000.0, 'art:camera'),
     ('USB study lamp', 'Electronics', 1800.0, 'art:lamp'),
-    ('Handmade canvas art', 'Other', 1800.0, 'art:painting'),
-    ('Handmade flower bouquet', 'Other', 2500.0, 'art:flowers'),
-    ('Crochet keychain', 'Other', 650.0, 'art:craft'),
+    ('Sri Lankan cultural painting', 'Other', 1800.0, 'marketplace_culture.png'),
+    ('Handmade flower bouquet', 'Other', 2500.0, 'marketplace_bouquet.png'),
+    ('Crochet keychain', 'Other', 650.0, 'marketplace_crochet.png'),
     ('Campus backpack', 'Other', 2200.0, 'backpack.jfif'),
     ('Study stationery set', 'Other', 900.0, 'art:stationery'),
   ])

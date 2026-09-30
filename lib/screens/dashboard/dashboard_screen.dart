@@ -96,10 +96,7 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: const [
-                              Icon(
-                                Icons.shield_outlined,
-                                color: Colors.white,
-                              ),
+                              Icon(Icons.shield_outlined, color: Colors.white),
                               SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -337,8 +334,9 @@ class DashboardScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/recent_activity'),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/recent_activity'),
                         child: const Text(
                           'View All',
                           style: TextStyle(
@@ -473,5 +471,4 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-
 }

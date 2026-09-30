@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../lost_found/followup_card.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -19,10 +20,12 @@ class NotificationsScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(20.0),
           children: [
+            const LostFoundFollowups(),
             _buildNotificationItem(
               icon: Icons.work_outline,
               title: '🔔 New Job Match',
-              subtitle: 'A Data Analyst Internship matches 91% of your profile.',
+              subtitle:
+                  'A Data Analyst Internship matches 91% of your profile.',
               time: '10 min ago',
               color: AppColors.primary,
             ),
@@ -78,11 +81,29 @@ class NotificationsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                Text(time, style: const TextStyle(color: AppColors.textLight, fontSize: 10)),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    color: AppColors.textLight,
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
           ),

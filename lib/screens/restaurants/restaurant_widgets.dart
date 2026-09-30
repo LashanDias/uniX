@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
-const foodAccent = Color(0xFFB64E23);
-const foodInk = Color(0xFF233A32);
-const foodCanvas = Color(0xFFFAF8F4);
+const foodAccent = Color(0xFF002DDF);
+const foodInk = Color(0xFF002DDF);
+const foodCanvas = Color(0xFFF8FAFC);
 
 class RestaurantPhoto extends StatelessWidget {
   const RestaurantPhoto({super.key, this.photoBase64 = '', this.height = 180});
@@ -34,7 +34,7 @@ class RestaurantPhoto extends StatelessWidget {
             fit: BoxFit.cover,
             alignment: Alignment.bottomCenter,
             errorBuilder: (_, _, _) => const ColoredBox(
-              color: Color(0xFFE8EDE3),
+              color: Color(0xFFEBF0FF),
               child: Center(
                 child: Icon(Icons.restaurant, size: 44, color: foodInk),
               ),
@@ -77,7 +77,7 @@ class FoodNotice extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: const Color(0xFFFFF0DD),
+      color: const Color(0xFFEBF0FF),
       borderRadius: BorderRadius.circular(14),
     ),
     child: Row(

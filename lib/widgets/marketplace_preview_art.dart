@@ -1,8 +1,45 @@
 import 'package:flutter/material.dart';
 
+/// Drawn stand-in artwork for a marketplace listing.
+///
+/// Used both for seeded preview listings and, via [kindFor], whenever a real
+/// listing has no photo or its photo fails to load. A drawn card reads far
+/// better in the grid than a bare grey "broken image" icon.
 class MarketplacePreviewArt extends StatelessWidget {
   const MarketplacePreviewArt({super.key, required this.kind});
   final String kind;
+
+  /// Title and category keywords mapped to the artwork they should use.
+  ///
+  /// Ordered most specific first: "calculator" must win before "book", and
+  /// "physics" before the generic book art.
+  static const _keywords = <String, List<String>>{
+    'physics': ['physics'],
+    'math': ['math', 'calculus', 'algebra', 'statistic'],
+    'programming': ['program', 'coding', 'software', 'python', 'java', 'dart'],
+    'calculator': ['calculator', 'casio'],
+    'audio': ['earbud', 'earphone', 'headphone', 'airpod', 'speaker', 'audio'],
+    'laptop': ['laptop', 'macbook', 'notebook computer'],
+    'phone': ['phone', 'iphone', 'android', 'mobile'],
+    'camera': ['camera', 'dslr', 'lens'],
+    'lamp': ['lamp', 'light'],
+    'bag': ['bag', 'backpack', 'luggage'],
+    'painting': ['paint', 'art', 'canvas', 'drawing'],
+    'flowers': ['flower', 'bouquet', 'floral'],
+    'craft': ['craft', 'crochet', 'handmade', 'knit'],
+    'book': ['book', 'textbook', 'novel', 'guide'],
+  };
+
+  /// Picks artwork for a listing from its [title] and [category].
+  ///
+  /// Falls back to stationery, which is deliberately generic.
+  static String kindFor(String title, String category) {
+    final haystack = '$title $category'.toLowerCase();
+    for (final entry in _keywords.entries) {
+      if (entry.value.any(haystack.contains)) return entry.key;
+    }
+    return 'stationery';
+  }
   @override
   Widget build(BuildContext context) {
     final (icon, color, label) = switch (kind) {
@@ -35,9 +72,26 @@ class MarketplacePreviewArt extends StatelessWidget {
         'FLOWER BOUQUET',
       ),
       'craft' => (Icons.interests, const Color(0xFFB4814F), 'CROCHET CRAFT'),
+      'calculator' => (
+        Icons.calculate_outlined,
+        const Color(0xFF3E6B8A),
+        'CALCULATOR',
+      ),
+      'audio' => (
+        Icons.headphones_outlined,
+        const Color(0xFF5B5470),
+        'AUDIO GEAR',
+      ),
+      'laptop' => (
+        Icons.laptop_mac_outlined,
+        const Color(0xFF41566B),
+        'LAPTOP',
+      ),
+      'bag' => (Icons.backpack_outlined, const Color(0xFF8A5A3B), 'BAG'),
+      'book' => (Icons.menu_book, const Color(0xFF4A6FA5), 'TEXTBOOK'),
       _ => (Icons.edit_note, const Color(0xFF548578), 'STATIONERY'),
     };
-    final book = ['math', 'physics', 'programming'].contains(kind);
+    final book = ['math', 'physics', 'programming', 'book'].contains(kind);
     return Center(
       child: Container(
         width: book ? 80 : 116,

@@ -15,10 +15,13 @@ class NotesService {
           final data = doc.data();
           return NoteItem(
             id: doc.id,
+            degree: data['degree'] as String? ?? '',
+            topic: data['topic'] as String? ?? '',
             title: data['title'] as String? ?? 'Untitled note',
             subject: data['subject'] as String? ?? 'General',
             fileType: data['fileType'] as String? ?? 'PDF',
-            uploadedDate: data['uploadedDate'] as String? ??
+            uploadedDate:
+                data['uploadedDate'] as String? ??
                 DateTime.now().toLocal().toString().split(' ')[0],
             description: data['description'] as String? ?? '',
             ownerId: data['ownerId'] as String? ?? '',
@@ -33,6 +36,8 @@ class NotesService {
     required String description,
     required String fileType,
     String fileUrl = '',
+    String degree = '',
+    String topic = '',
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -42,6 +47,8 @@ class NotesService {
     await FirebaseFirestore.instance.collection('notes').add({
       'title': title.trim(),
       'subject': subject,
+      'degree': degree,
+      'topic': topic,
       'description': description.trim(),
       'fileType': fileType,
       'fileUrl': fileUrl,
@@ -57,10 +64,17 @@ class NotesService {
       throw StateError('Please sign in to delete this note.');
     }
 
-    final doc = await FirebaseFirestore.instance.collection('notes').doc(noteId).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('notes')
+        .doc(noteId)
+        .get();
     final ownerId = doc.data()?['ownerId'] as String? ?? '';
     final isAdmin = AuthService.isCurrentUserAdmin();
-    if (!AppAccessService.canManageOwnedResource(user.uid, ownerId, isAdmin: isAdmin)) {
+    if (!AppAccessService.canManageOwnedResource(
+      user.uid,
+      ownerId,
+      isAdmin: isAdmin,
+    )) {
       throw StateError('Only the note owner or admin can remove this item.');
     }
 

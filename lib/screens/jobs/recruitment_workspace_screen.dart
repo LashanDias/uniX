@@ -124,6 +124,20 @@ class _RecruitmentWorkspaceScreenState
   }
 
   Future<void> _save(bool cv) async {
+    if (_busy) return;
+    if ((!cv &&
+            (_role.text.trim().length < 2 ||
+                _role.text.trim().length > 150 ||
+                _company.text.trim().length < 2 ||
+                _company.text.trim().length > 150)) ||
+        (cv ? _cv.text : _requirements.text).trim().length > 100000) {
+      setState(
+        () => _message =
+            'Use 2–150 characters for job title and company, and at most 100,000 characters for document text.',
+      );
+      return;
+    }
+
     if ((cv ? _cv.text : _requirements.text).trim().isEmpty ||
         (!cv && (_role.text.trim().isEmpty || _company.text.trim().isEmpty))) {
       setState(
@@ -263,25 +277,50 @@ class _RecruitmentWorkspaceScreenState
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.recruiterMode
-                            ? 'Find the skills your team needs.'
-                            : 'Your CV. Real requirements.',
-                        style: const TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Upload documents, review the text and compare the student CV with the HR brief.',
-                        style: TextStyle(color: Colors.white, height: 1.5),
-                      ),
-                    ],
+                  // The robot sits beside the copy when there is room and is
+                  // dropped entirely on a narrow phone, where a 110px image
+                  // would squeeze the heading into a column of single words.
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final copy = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.recruiterMode
+                                ? 'Find the skills your team needs.'
+                                : 'Your CV. Real requirements.',
+                            style: const TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Upload documents, review the text and compare the '
+                            'student CV with the HR brief.',
+                            style: TextStyle(color: Colors.white, height: 1.5),
+                          ),
+                        ],
+                      );
+                      if (constraints.maxWidth < 420) return copy;
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(child: copy),
+                          const SizedBox(width: 12),
+                          Image.asset(
+                            'assets/images/ai_bot.png',
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.contain,
+                            // A missing asset must not break the banner.
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -293,12 +332,12 @@ class _RecruitmentWorkspaceScreenState
                   ),
                 ),
                 const SizedBox(height: 18),
-          if (!widget.recruiterMode)
-            TextButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/recruiter'),
-              icon: const Icon(Icons.badge_outlined),
-              label: const Text('HR manager? Open recruiter workspace'),
-            ),
+                if (!widget.recruiterMode)
+                  TextButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/recruiter'),
+                    icon: const Icon(Icons.badge_outlined),
+                    label: const Text('HR manager? Open recruiter workspace'),
+                  ),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,

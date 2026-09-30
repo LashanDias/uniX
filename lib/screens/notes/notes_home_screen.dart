@@ -1,207 +1,201 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
 import '../../services/mock_data_service.dart';
+import '../../services/notes_service.dart';
+import '../../services/notes_catalog.dart';
+import '../../widgets/app_back_button.dart';
 
 class NotesHomeScreen extends StatefulWidget {
-  const NotesHomeScreen({super.key});
-
+  const NotesHomeScreen({super.key, this.notesStream});
+  final Stream<List<NoteItem>>? notesStream;
   @override
   State<NotesHomeScreen> createState() => _NotesHomeScreenState();
 }
 
 class _NotesHomeScreenState extends State<NotesHomeScreen> {
-  final List<NoteItem> notes = MockDataService.getNotes();
-
+  late final _stream =
+      widget.notesStream ??
+      (Firebase.apps.isEmpty
+          ? Stream<List<NoteItem>>.value([])
+          : NotesService.watchNotes());
+  String? _subject, _degree, _topic;
+  String _query = '';
+  void _back() => setState(() {
+    if (_topic != null) {
+      _topic = null;
+    } else if (_degree != null) {
+      _degree = null;
+    } else {
+      _subject = null;
+    }
+    _query = '';
+  });
+  Widget _tile(String title, String subtitle, VoidCallback onTap) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: AppColors.border),
+    ),
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      leading: const Icon(Icons.folder_outlined, color: AppColors.primary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    ),
+  );
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => PopScope(
+    canPop: _subject == null,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) _back();
+    },
+    child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Notes'),
+        title: Text(_topic ?? _degree ?? _subject ?? 'Notes'),
+        leading: _subject == null
+            ? const AppBackButton()
+            : IconButton(
+                tooltip: 'Back',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _back,
+              ),
         actions: [
           IconButton(
+            tooltip: 'Notifications',
             icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () {},
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-          child: Column(
-            crossAxisAlignment: CrossAlignment.start,
+      body: StreamBuilder<List<NoteItem>>(
+        stream: _stream,
+        builder: (context, snapshot) {
+          final sample = !snapshot.hasData || snapshot.data!.isEmpty;
+          final notes = sample ? MockDataService.getNotes() : snapshot.data!;
+          final visible = notes
+              .where(
+                (note) =>
+                    (_subject == null ||
+                        NotesCatalog.matches(
+                          note,
+                          _subject!,
+                          _degree,
+                          _topic,
+                        )) &&
+                    '${note.title} ${note.subject} ${NotesCatalog.topic(note)}'
+                        .toLowerCase()
+                        .contains(_query.toLowerCase()),
+              )
+              .toList();
+          return ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              // Search & Filter
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search anything...',
-                        prefixIcon: const Icon(Icons.search, color: AppColors.textLight),
-                        fillColor: Colors.white,
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: const Icon(Icons.tune, color: AppColors.textPrimary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              const Text(
-                'Subjects',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              TextField(
+                key: ValueKey('$_subject/$_degree/$_topic'),
+                onChanged: (value) => setState(() => _query = value.trim()),
+                decoration: const InputDecoration(
+                  hintText: 'Search notes...',
+                  prefixIcon: Icon(Icons.search),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // Subject Cards matching Notes Home in Figma
-              _buildSubjectTile('ICT', '12 Notes', () {}),
-              const SizedBox(height: 12),
-              _buildSubjectTile('English', '6 Notes', () {}),
-              const SizedBox(height: 12),
-              _buildSubjectTile('Mathematics', '8 Notes', () {}),
-              const SizedBox(height: 12),
-              _buildSubjectTile('Science', '15 Notes', () {}),
               const SizedBox(height: 20),
-
-              // Add Note dashed box button
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/upload_notes'),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.primary, width: 1.5, style: BorderStyle.solid),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.add, color: AppColors.primary),
-                      SizedBox(width: 6),
-                      Text(
-                        'Add Note',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+              if (sample)
+                Text(
+                  snapshot.hasError
+                      ? 'Live notes could not load. Showing sample notes.'
+                      : 'Sample notes — upload notes to build your library.',
                 ),
+              const SizedBox(height: 12),
+              if (_query.isEmpty && _subject == null) ...[
+                const Text(
+                  'Subjects',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                for (final subject in [
+                  'ICT',
+                  'English',
+                  'Mathematics',
+                  'Science',
+                ])
+                  _tile(
+                    subject,
+                    subject == 'ICT'
+                        ? 'Degree categories and common subjects'
+                        : 'Browse subjects and notes',
+                    () => setState(() => _subject = subject),
+                  ),
+              ] else if (_query.isEmpty &&
+                  _subject == 'ICT' &&
+                  _degree == null) ...[
+                const Text(
+                  'Choose a degree category',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text('Common subjects are shared across IT degrees.'),
+                const SizedBox(height: 12),
+                for (final degree in NotesCatalog.ict.keys)
+                  _tile(
+                    degree,
+                    degree == 'Common'
+                        ? 'Statistics, mathematics, English and programming'
+                        : '${NotesCatalog.ict[degree]!.length} subject groups',
+                    () => setState(() => _degree = degree),
+                  ),
+              ] else if (_query.isEmpty &&
+                  _topic == null &&
+                  _subject != null) ...[
+                for (final topic in {
+                  ...(_subject == 'ICT'
+                      ? NotesCatalog.ict[_degree]!
+                      : NotesCatalog.subjects[_subject]!),
+                  ...visible.map(NotesCatalog.topic),
+                })
+                  _tile(
+                    topic,
+                    '${notes.where((note) => NotesCatalog.matches(note, _subject!, _degree, topic)).length} notes',
+                    () => setState(() => _topic = topic),
+                  ),
+              ],
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/upload_notes'),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Note'),
               ),
               const SizedBox(height: 24),
-
-              const Text(
-                'Recent Notes',
-                style: TextStyle(
-                  fontSize: 16,
+              Text(
+                _subject == null ? 'Recent Notes' : 'Notes',
+                style: const TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),
-
-              ...notes.map((note) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+              if (visible.isEmpty)
+                const Text(
+                  'No notes in this category yet. Add a note to get started.',
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.picture_as_pdf, color: AppColors.primary),
-                    ),
-                    title: Text(
-                      note.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      '${note.subject} • ${note.uploadedDate}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textLight),
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textLight),
-                    onTap: () {
-                      Navigator.pushNamed(context, '/note_detail', arguments: note);
-                    },
+              for (final note in visible)
+                _tile(
+                  note.title,
+                  '${note.subject} • ${note.uploadedDate}',
+                  () => Navigator.pushNamed(
+                    context,
+                    '/note_detail',
+                    arguments: note,
                   ),
                 ),
-              )),
             ],
-          ),
-        ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildSubjectTile(String title, String countText, VoidCallback onTap) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.folder_outlined, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  countText,
-                  style: const TextStyle(color: AppColors.textLight, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: AppColors.textLight),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }

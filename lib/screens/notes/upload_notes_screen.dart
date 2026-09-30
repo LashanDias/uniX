@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/notes_service.dart';
+import '../../services/notes_catalog.dart';
 
 class UploadNotesScreen extends StatefulWidget {
   const UploadNotesScreen({super.key});
@@ -12,6 +13,8 @@ class UploadNotesScreen extends StatefulWidget {
 class _UploadNotesScreenState extends State<UploadNotesScreen> {
   String selectedSubject = 'ICT';
   String fileName = '';
+  String selectedDegree = 'Common';
+  String selectedTopic = 'Statistics';
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   bool submitting = false;
@@ -35,31 +38,36 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
             children: [
               const Text(
                 'Title',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 6),
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter note title',
-                ),
+                decoration: const InputDecoration(hintText: 'Enter note title'),
               ),
               const SizedBox(height: 18),
 
               const Text(
                 'Subject',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 initialValue: selectedSubject,
-                decoration: const InputDecoration(
-                  hintText: 'Select Subject',
-                ),
+                decoration: const InputDecoration(hintText: 'Select Subject'),
                 items: const [
                   DropdownMenuItem(value: 'ICT', child: Text('ICT')),
                   DropdownMenuItem(value: 'English', child: Text('English')),
-                  DropdownMenuItem(value: 'Mathematics', child: Text('Mathematics')),
+                  DropdownMenuItem(
+                    value: 'Mathematics',
+                    child: Text('Mathematics'),
+                  ),
                   DropdownMenuItem(value: 'Science', child: Text('Science')),
                 ],
                 onChanged: (val) {
@@ -68,9 +76,44 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
               ),
               const SizedBox(height: 18),
 
+              if (selectedSubject == 'ICT') ...[
+                DropdownButtonFormField<String>(
+                  initialValue: selectedDegree,
+                  decoration: const InputDecoration(
+                    labelText: 'Degree category',
+                  ),
+                  items: NotesCatalog.ict.keys
+                      .map(
+                        (value) =>
+                            DropdownMenuItem(value: value, child: Text(value)),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() {
+                    selectedDegree = value!;
+                    selectedTopic = NotesCatalog.ict[value]!.first;
+                  }),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selectedDegree),
+                  initialValue: selectedTopic,
+                  decoration: const InputDecoration(labelText: 'Subject'),
+                  items: NotesCatalog.ict[selectedDegree]!
+                      .map(
+                        (value) =>
+                            DropdownMenuItem(value: value, child: Text(value)),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() => selectedTopic = value!),
+                ),
+                const SizedBox(height: 18),
+              ],
               const Text(
                 'Upload File',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
 
@@ -87,12 +130,20 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary, width: 1.5, style: BorderStyle.solid),
+                    border: Border.all(
+                      color: AppColors.primary,
+                      width: 1.5,
+                      style: BorderStyle.solid,
+                    ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 36),
+                      const Icon(
+                        Icons.cloud_upload_outlined,
+                        color: AppColors.primary,
+                        size: 36,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         fileName.isEmpty ? 'Choose File' : fileName,
@@ -105,7 +156,10 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
                       const SizedBox(height: 4),
                       const Text(
                         'supported formats: PDF, DOC, DOCX',
-                        style: TextStyle(color: AppColors.textLight, fontSize: 11),
+                        style: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -115,7 +169,10 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
 
               const Text(
                 'Description (Optional)',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 6),
               TextField(
@@ -129,47 +186,64 @@ class _UploadNotesScreenState extends State<UploadNotesScreen> {
                 alignment: Alignment.centerRight,
                 child: Padding(
                   padding: EdgeInsets.only(top: 4),
-                  child: Text('0/500', style: TextStyle(color: AppColors.textLight, fontSize: 11)),
+                  child: Text(
+                    '0/500',
+                    style: TextStyle(color: AppColors.textLight, fontSize: 11),
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
 
               ElevatedButton(
-                onPressed: submitting ? null : () async {
-                  final title = titleController.text.trim();
-                  final description = descriptionController.text.trim();
-                  final messenger = ScaffoldMessenger.maybeOf(context);
-                  final navigator = Navigator.of(context);
+                onPressed: submitting
+                    ? null
+                    : () async {
+                        final title = titleController.text.trim();
+                        final description = descriptionController.text.trim();
+                        final messenger = ScaffoldMessenger.maybeOf(context);
+                        final navigator = Navigator.of(context);
 
-                  if (title.isEmpty) {
-                    messenger?.showSnackBar(
-                      const SnackBar(content: Text('Please enter a note title.')),
-                    );
-                    return;
-                  }
+                        if (title.isEmpty) {
+                          messenger?.showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a note title.'),
+                            ),
+                          );
+                          return;
+                        }
 
-                  setState(() => submitting = true);
-                  try {
-                    await NotesService.addNote(
-                      title: title,
-                      subject: selectedSubject,
-                      description: description,
-                      fileType: fileName.isEmpty ? 'PDF' : fileName.split('.').last,
-                    );
-                    if (!mounted) return;
-                    messenger?.showSnackBar(
-                      const SnackBar(content: Text('Note uploaded successfully!')),
-                    );
-                    navigator.pop();
-                  } catch (error) {
-                    if (!mounted) return;
-                    messenger?.showSnackBar(
-                      SnackBar(content: Text(error.toString())),
-                    );
-                  } finally {
-                    if (mounted) setState(() => submitting = false);
-                  }
-                },
+                        setState(() => submitting = true);
+                        try {
+                          await NotesService.addNote(
+                            title: title,
+                            subject: selectedSubject,
+                            degree: selectedSubject == 'ICT'
+                                ? selectedDegree
+                                : '',
+                            topic: selectedSubject == 'ICT'
+                                ? selectedTopic
+                                : '',
+                            description: description,
+                            fileType: fileName.isEmpty
+                                ? 'PDF'
+                                : fileName.split('.').last,
+                          );
+                          if (!mounted) return;
+                          messenger?.showSnackBar(
+                            const SnackBar(
+                              content: Text('Note uploaded successfully!'),
+                            ),
+                          );
+                          navigator.pop();
+                        } catch (error) {
+                          if (!mounted) return;
+                          messenger?.showSnackBar(
+                            SnackBar(content: Text(error.toString())),
+                          );
+                        } finally {
+                          if (mounted) setState(() => submitting = false);
+                        }
+                      },
                 child: Text(submitting ? 'Uploading...' : 'Upload'),
               ),
             ],

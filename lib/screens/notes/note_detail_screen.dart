@@ -40,7 +40,11 @@ class NoteDetailScreen extends StatelessWidget {
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.description, color: Colors.white, size: 50),
+                      child: const Icon(
+                        Icons.description,
+                        color: Colors.white,
+                        size: 50,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -56,18 +60,38 @@ class NoteDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.class_outlined, size: 16, color: AppColors.textSecondary),
+                        const Icon(
+                          Icons.class_outlined,
+                          size: 16,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 6),
-                        Text('Subject : ${note.subject}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text(
+                          'Subject : ${note.subject}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.textSecondary),
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 16,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 6),
-                        Text('Uploaded on : ${note.uploadedDate}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                        Text(
+                          'Uploaded on : ${note.uploadedDate}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -78,14 +102,21 @@ class NoteDetailScreen extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Downloading note...')),
+                                const SnackBar(
+                                  content: Text('Downloading note...'),
+                                ),
                               );
                             },
                             icon: const Icon(Icons.download, size: 18),
-                            label: const Text('Download', style: TextStyle(fontSize: 13)),
+                            label: const Text(
+                              'Download',
+                              style: TextStyle(fontSize: 13),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -94,14 +125,21 @@ class NoteDetailScreen extends StatelessWidget {
                           child: OutlinedButton.icon(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Share link copied!')),
+                                const SnackBar(
+                                  content: Text('Share link copied!'),
+                                ),
                               );
                             },
                             icon: const Icon(Icons.share, size: 18),
-                            label: const Text('Share', style: TextStyle(fontSize: 13)),
+                            label: const Text(
+                              'Share',
+                              style: TextStyle(fontSize: 13),
+                            ),
                             style: OutlinedButton.styleFrom(
                               backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
@@ -154,7 +192,9 @@ class NoteDetailScreen extends StatelessWidget {
                       await NotesService.deleteNote(note.id);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Note deleted successfully.')),
+                          const SnackBar(
+                            content: Text('Note deleted successfully.'),
+                          ),
                         );
                         Navigator.pop(context);
                       }

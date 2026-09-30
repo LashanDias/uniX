@@ -71,6 +71,9 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/marketplace_culture.png
+    - assets/images/marketplace_bouquet.png
+    - assets/images/marketplace_crochet.png
     - assets/images/lost_wallet.png
     - assets/images/lost_keys.png
     - assets/images/lost_student_card.png

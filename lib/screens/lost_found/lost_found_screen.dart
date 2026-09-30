@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
+import '../../services/lost_found_service.dart';
+import 'cloud_reports.dart';
+import 'followup_card.dart';
 
 class LostFoundScreen extends StatefulWidget {
   const LostFoundScreen({super.key});
@@ -59,11 +62,34 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
     final visible = _items
         .where((e) => _tab == 0 || e.$2 == (_tab == 1 ? 'Lost' : 'Found'))
         .toList();
-    final reports = _tab == 2 ? <Map<String, dynamic>>[] : _reports;
+    final reports = _reports
+        .where(
+          (r) =>
+              _tab == 0 ||
+              (r['type'] ?? 'lost') == (_tab == 1 ? 'lost' : 'found'),
+        )
+        .toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Lost & Found')),
+      appBar: AppBar(
+        title: const Text('Lost & Found'),
+        actions: [
+          IconButton(
+            tooltip: 'My report history',
+            icon: const Icon(Icons.history),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const Scaffold(
+                  appBar: null,
+                  body: SafeArea(child: LostFoundCloudReports(history: true)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -111,10 +137,23 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                 thumbVisibility: true,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
-                  itemCount: reports.length + visible.length,
+                  itemCount: reports.length + visible.length + 1,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 12),
                   itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return Column(
+                        children: [
+                          const LostFoundFollowups(),
+                          LostFoundCloudReports(
+                            type: _tab == 0
+                                ? null
+                                : (_tab == 1 ? 'lost' : 'found'),
+                          ),
+                        ],
+                      );
+                    }
+                    index -= 1;
                     if (index < reports.length) {
                       final report = reports[index];
                       final images = List<String>.from(
@@ -131,7 +170,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                               ),
                         title: Text(report['title'] as String),
                         subtitle: Text(
-                          "${report['location']} — Saved on this device",
+                          "${report['location']} — Local draft - no automatic follow-ups",
                         ),
                         onTap: () => Navigator.push(
                           context,
@@ -161,7 +200,9 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                                     const SizedBox(height: 20),
                                     Text(report['location'] as String),
                                     Text(report['description'] as String),
-                                    const Text('Saved on this device'),
+                                    const Text(
+                                      'Local draft - no automatic follow-ups',
+                                    ),
                                   ],
                                 ),
                               ),
@@ -170,7 +211,17 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                         ),
                       );
                     }
-                    return _itemCard(context, visible[index - reports.length]);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (index == reports.length)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Text('Example reports'),
+                          ),
+                        _itemCard(context, visible[index - reports.length]),
+                      ],
+                    );
                   },
                 ),
               ),
@@ -371,7 +422,8 @@ class LostItemDetailScreen extends StatelessWidget {
 }
 
 class ReportItemScreen extends StatefulWidget {
-  const ReportItemScreen({super.key, this.pickImages});
+  const ReportItemScreen({super.key, this.pickImages, this.onSave});
+  final Future<void> Function(Map<String, dynamic>)? onSave;
   final Future<List<XFile>> Function()? pickImages;
   @override
   State<ReportItemScreen> createState() => _ReportItemScreenState();
@@ -379,6 +431,9 @@ class ReportItemScreen extends StatefulWidget {
 
 class _ReportItemScreenState extends State<ReportItemScreen> {
   String _category = 'Wallet';
+  String _type = 'lost';
+  String? _itemId;
+  final String _draftId = DateTime.now().microsecondsSinceEpoch.toString();
   final _title = TextEditingController();
   final _location = TextEditingController();
   final _description = TextEditingController();
@@ -403,9 +458,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
       final files =
           await (widget.pickImages?.call() ??
               ImagePicker().pickMultiImage(
-                maxWidth: 1000,
-                maxHeight: 1000,
-                imageQuality: 75,
+                maxWidth: 800,
+                maxHeight: 800,
+                imageQuality: 65,
               ));
       for (final file in files) {
         if (_images.length >= 3) {
@@ -415,8 +470,10 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
           break;
         }
         final bytes = await file.readAsBytes();
-        if (bytes.length > 1024 * 1024) {
-          throw StateError('Choose photos smaller than 1 MB each.');
+        if (_images.fold<int>(0, (sum, image) => sum + image.length) +
+                bytes.length >
+            600000) {
+          throw StateError('Choose smaller photos: the total limit is 600 KB.');
         }
         final codec = await ui.instantiateImageCodec(bytes);
         codec.dispose();
@@ -436,7 +493,8 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
     }
   }
 
-  Future<void> _save() async {
+  Future<void> _saveDraft() async {
+    if (_busy) return;
     if (_title.text.trim().isEmpty || _location.text.trim().isEmpty) {
       setState(() => _error = 'Enter a title and location.');
       return;
@@ -447,32 +505,94 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
+      final drafts = (prefs.getStringList('lostFound.reports.v1') ?? [])
+          .where((entry) => (jsonDecode(entry) as Map)['draftId'] != _draftId)
+          .toList();
       final report = jsonEncode({
+        'draftId': _draftId,
         'title': _title.text.trim(),
         'location': _location.text.trim(),
         'description': _description.text.trim(),
         'category': _category,
+        'type': _type,
         'images': _images.map(base64Encode).toList(),
       });
-      final reports = prefs.getStringList('lostFound.reports.v1') ?? [];
       if (!await prefs.setStringList('lostFound.reports.v1', [
         report,
-        ...reports,
+        ...drafts,
       ])) {
-        throw StateError('Save failed');
+        throw StateError('Could not save draft.');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Report and images saved on this device.'),
+          content: Text(
+            'Draft saved on this device. Publish a report to start automatic follow-ups.',
+          ),
         ),
       );
       Navigator.pop(context, true);
     } catch (_) {
       if (mounted) {
         setState(
-          () => _error =
-              'Could not save. Your photos are still here; please retry.',
+          () =>
+              _error = 'Could not save this draft. Your photos are still here.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    if (_title.text.trim().isEmpty || _location.text.trim().isEmpty) {
+      setState(() => _error = 'Enter a title and location.');
+      return;
+    }
+    if (_title.text.trim().length > 150 ||
+        _location.text.trim().length > 250 ||
+        _description.text.trim().length > 3000) {
+      setState(
+        () => _error =
+            'Title: maximum 150 characters; location: 250; description: 3000.',
+      );
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      if (widget.onSave == null && LostFoundService.userId == null) {
+        throw StateError('Please sign in to publish a report.');
+      }
+      _itemId ??= widget.onSave != null
+          ? 'test-report'
+          : LostFoundService.newId();
+      final report = <String, dynamic>{
+        'itemId': _itemId,
+        'type': _type,
+        'title': _title.text.trim(),
+        'location': _location.text.trim(),
+        'description': _description.text.trim(),
+        'category': _category,
+        'images': _images.map(base64Encode).toList(),
+      };
+      await (widget.onSave ?? LostFoundService.create)(report);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Report published. Your first follow-up is in 2 days.'),
+        ),
+      );
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is StateError
+              ? error.message.toString()
+              : 'Could not publish. Check your connection or backend setup and retry. Your photos are still here.',
         );
       }
     } finally {
@@ -490,6 +610,18 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _fieldLabel('Report type'),
+            DropdownButtonFormField<String>(
+              initialValue: _type,
+              items: const [
+                DropdownMenuItem(value: 'lost', child: Text('Lost Item')),
+                DropdownMenuItem(value: 'found', child: Text('Found Item')),
+              ],
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _type = value!),
+            ),
+            const SizedBox(height: 14),
             _fieldLabel('Title'),
             TextField(
               controller: _title,
@@ -521,7 +653,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
               icon: const Icon(Icons.add),
               label: Text(_busy ? 'Please wait...' : 'Add Images'),
             ),
-            const Text('Up to 3 photos, 1 MB each.'),
+            const Text('Up to 3 PNG, JPEG or WebP photos, 600 KB total.'),
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -565,11 +697,15 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
             ),
             const SizedBox(height: 52),
             const Text(
-              'Reports are saved on this device, not published to other users.',
+              'Follow-ups repeat after 2, 4 and 8 days until this report is resolved.',
             ),
             ElevatedButton(
               onPressed: _busy ? null : _save,
-              child: const Text('Save Report'),
+              child: const Text('Publish Report'),
+            ),
+            TextButton(
+              onPressed: _busy ? null : _saveDraft,
+              child: const Text('Save draft on this device'),
             ),
           ],
         ),
@@ -586,97 +722,16 @@ class FindItemScreen extends StatelessWidget {
   const FindItemScreen({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
-    appBar: AppBar(title: const Text('Find')),
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(radius: 14, backgroundColor: Color(0xFFFF8990)),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      'We found a possible match for your lost item: “Black Wallet” posted in the library.\nDid you get item?',
-                      style: TextStyle(fontSize: 12, height: 1.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.check_circle_outline, size: 18),
-                    label: const Text(
-                      'Yes, I got it',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.cancel_outlined, size: 18),
-                    label: const Text(
-                      'No, not yet',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                children: [
-                  CircleAvatar(radius: 13, backgroundColor: Color(0xFFFF8990)),
-                  SizedBox(width: 12),
-                  Text(
-                    'Okay, we remind you again tomorrow',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                const Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(hintText: 'Type a message...'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  child: IconButton(
-                    onPressed: null,
-                    icon: Icon(Icons.send, color: Colors.white, size: 19),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    appBar: AppBar(title: const Text('Lost & Found follow-ups')),
+    body: const SingleChildScrollView(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Your due follow-ups appear here and in Notifications.'),
+          SizedBox(height: 16),
+          LostFoundFollowups(),
+        ],
       ),
     ),
   );

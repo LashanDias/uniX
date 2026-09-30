@@ -35,7 +35,25 @@ class RecruitmentStore {
   }
 
   Future<void> saveRequirements(Map<String, dynamic> requirement) async {
+    for (final field in ['id', 'ownerId', 'title', 'company', 'text']) {
+      if (requirement[field] is! String ||
+          (requirement[field] as String).trim().isEmpty) {
+        throw StateError('Missing $field.');
+      }
+    }
+    if ((requirement['title'] as String).length > 150 ||
+        (requirement['company'] as String).length > 150 ||
+        (requirement['text'] as String).length > 100000) {
+      throw StateError('Requirements exceed the allowed length.');
+    }
     final entries = await requirements();
+    if (entries.any(
+      (entry) =>
+          entry['id'] == requirement['id'] &&
+          entry['ownerId'] != requirement['ownerId'],
+    )) {
+      throw StateError('Only the author can edit these requirements.');
+    }
     entries.removeWhere((entry) => entry['id'] == requirement['id']);
     final prefs = await SharedPreferences.getInstance();
     if (!await prefs.setString(
