@@ -51,6 +51,13 @@ const kSearchDestinations = <SearchDestination>[
     route: '/short_notes',
   ),
   SearchDestination(
+    label: 'Formula sheets',
+    icon: Icons.functions,
+    keywords: ['formula', 'statistics', 'variance', 'probability', 'maths',
+      'math', 'equation', 'reference', 'revision'],
+    route: '/formula_sheets',
+  ),
+  SearchDestination(
     label: 'Marketplace',
     icon: Icons.shopping_cart_outlined,
     keywords: ['market', 'buy', 'sell', 'gear', 'shop', 'item', 'product'],

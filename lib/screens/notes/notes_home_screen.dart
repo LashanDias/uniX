@@ -117,6 +117,19 @@ class _NotesHomeScreenState extends State<NotesHomeScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/formula_sheets'),
+                  icon: const Icon(Icons.functions, size: 18),
+                  label: const Text('Formula reference sheets'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 46),
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               if (sample)
                 Text(
