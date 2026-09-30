@@ -74,6 +74,27 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Campus notice board: everyone signed in reads, only admins write.
+    match /notices/{id} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'body', 'category',
+          'pinned', 'postedBy', 'postedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 1500
+        && request.resource.data.category in
+          ['Academic', 'Events', 'Facilities', 'Exams', 'General']
+        && request.resource.data.pinned is bool
+        && request.resource.data.postedBy is string
+        && request.resource.data.postedBy.size() <= 200
+        && request.resource.data.postedAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
     match /products/{id} {
       allow read: if isSignedIn();
       allow create: if isSLTCUser()
