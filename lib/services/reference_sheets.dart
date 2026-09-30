@@ -28,6 +28,7 @@ class ReferenceSheet {
   const ReferenceSheet({
     required this.id,
     required this.subject,
+    this.degreeGroup = 'Common',
     required this.title,
     required this.subtitle,
     required this.summary,
@@ -39,6 +40,15 @@ class ReferenceSheet {
 
   /// Module this sheet belongs to, matching the notes catalogue topics.
   final String subject;
+
+  /// Degree group from NotesCatalog, e.g. Common or Data Science.
+  ///
+  /// Statistics and probability are taught to every IT degree, so they sit
+  /// under Common rather than under one degree.
+  final String degreeGroup;
+
+  /// Where the sheet sits in the module tree, e.g. "Common · Statistics".
+  String get modulePath => '$degreeGroup · $subject';
 
   final String title;
   final String subtitle;
@@ -56,6 +66,7 @@ class ReferenceSheet {
     if (needle.isEmpty) return true;
     return title.toLowerCase().contains(needle) ||
         subject.toLowerCase().contains(needle) ||
+        degreeGroup.toLowerCase().contains(needle) ||
         summary.toLowerCase().contains(needle) ||
         entries.any((entry) => entry.title.toLowerCase().contains(needle));
   }
@@ -218,6 +229,7 @@ class ReferenceSheets {
   static const bigO = ReferenceSheet(
     id: 'sheet-complexity',
     subject: 'Data Structures & Algorithms',
+    degreeGroup: 'Software Engineering',
     title: 'Time Complexity',
     subtitle: 'Big-O Reference Sheet',
     summary: 'How the common algorithms and structures scale with input size.',

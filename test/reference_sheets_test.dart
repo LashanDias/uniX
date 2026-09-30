@@ -63,6 +63,27 @@ void main() {
     });
   });
 
+  group('module placement', () {
+    test('statistics and probability sit under Common', () {
+      // Both are taught to every IT degree, so they belong to the Common
+      // group in NotesCatalog rather than to one degree.
+      expect(ReferenceSheets.statistics.degreeGroup, 'Common');
+      expect(ReferenceSheets.probability.degreeGroup, 'Common');
+    });
+
+    test('a degree-specific sheet names its degree', () {
+      expect(ReferenceSheets.bigO.degreeGroup, 'Software Engineering');
+    });
+
+    test('the module path reads as group then subject', () {
+      expect(ReferenceSheets.probability.modulePath, 'Common · Statistics');
+    });
+
+    test('a sheet can be found by its degree group', () {
+      expect(ReferenceSheets.bigO.matches('software engineering'), isTrue);
+    });
+  });
+
   group('search', () {
     test('finds a sheet by a formula name inside it', () {
       expect(ReferenceSheets.statistics.matches('variance'), isTrue);

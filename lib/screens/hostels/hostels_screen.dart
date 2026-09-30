@@ -33,10 +33,15 @@ class HostelItem {
   /// Street address used for the map link and the contact card.
   final String address;
 
-  /// Google Maps search link for [address].
+  /// Google Maps link for this hostel.
+  ///
+  /// Uses the campus coordinates rather than a name search, because
+  /// searching "Girls Hostel A, SLTC" finds nothing and drops the pin
+  /// somewhere unhelpful.
   Uri get mapsUrl => Uri.https('www.google.com', '/maps/search/', {
     'api': '1',
-    'query': '$name, $address',
+    'query':
+        '${HostelsScreen.campusLatitude},${HostelsScreen.campusLongitude}',
   });
 
   /// `tel:` link for [phone], with spaces stripped so dialers accept it.
@@ -48,6 +53,13 @@ class HostelsScreen extends StatelessWidget {
 
   /// Single hotline for all campus hostels.
   static const wardenPhone = '0112 100 5000';
+
+  /// SLTC Research University on Google Maps, as coordinates.
+  ///
+  /// A name search can land on the wrong place; these are the campus's own
+  /// coordinates, so the pin is always right.
+  static const campusLatitude = 6.8539907;
+  static const campusLongitude = 80.0929173;
 
   /// Campus address shared by every hostel block.
   static const campusAddress =

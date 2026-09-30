@@ -119,7 +119,7 @@ class _SheetTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        '${sheet.subject} · ${sheet.entries.length} formulas',
+        '${sheet.modulePath} · ${sheet.entries.length} formulas',
         style: const TextStyle(fontSize: 12),
       ),
       trailing: const Icon(Icons.chevron_right),
