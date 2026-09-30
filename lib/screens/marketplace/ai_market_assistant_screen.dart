@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../services/market_ai_service.dart';
+import '../../services/ai/ai_agent.dart';
+import '../../services/ai/market_tools.dart';
 import '../../widgets/ai_hero_banner.dart';
 
 class AiMarketAssistantScreen extends StatefulWidget {
@@ -12,6 +13,12 @@ class AiMarketAssistantScreen extends StatefulWidget {
 
 class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
   final TextEditingController _controller = TextEditingController();
+
+  /// One agent per screen, so the conversation keeps its memory while the
+  /// student is here and starts clean next time.
+  late final AiAgent _agent = AiAgent(
+    tools: [const SellingTool(), ...AiAgent.defaultTools()],
+  );
   final List<Map<String, String>> messages = [
     {
       'sender': 'ai',
@@ -26,17 +33,18 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
     });
     _controller.clear();
 
-    // Brief pause so the reply does not appear before the question has been
-    // drawn. The mounted check matters: without it, leaving the screen inside
-    // this window calls setState on a disposed State and throws.
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (!mounted) return;
-      setState(() {
-        messages.add({
-          'sender': 'ai',
-          'text': MarketAiService.reply(text),
-        });
-      });
+    _reply(text);
+  }
+
+  /// Asks the agent and appends its answer.
+  ///
+  /// The mounted checks matter: the reply is awaited, and leaving the screen
+  /// in the meantime would otherwise call setState on a disposed State.
+  Future<void> _reply(String text) async {
+    final reply = await _agent.send(text);
+    if (!mounted) return;
+    setState(() {
+      messages.add({'sender': 'ai', 'text': reply.text});
     });
   }
 

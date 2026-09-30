@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
-import '../../services/career_ai_service.dart';
+import '../../services/ai/ai_agent.dart';
+import '../../services/ai/market_tools.dart';
 import '../../services/job_service.dart';
 import 'job_listing_card.dart';
 
@@ -195,6 +196,13 @@ class TopJobsScreen extends StatelessWidget {
       ),
       builder: (sheetContext) {
         final controller = TextEditingController();
+        // One agent per opened chat, so the conversation keeps its memory for
+        // as long as the sheet is open and starts clean next time. Career
+        // advice leads, then the campus tools, so "what is the variance
+        // formula" still works from inside the career chat.
+        final agent = AiAgent(
+          tools: [const CareerTool(), ...AiAgent.defaultTools()],
+        );
         final messages = <Map<String, String>>[
           {
             'sender': 'ai',
@@ -215,7 +223,7 @@ class TopJobsScreen extends StatelessWidget {
                 messages.add({'sender': 'user', 'text': text});
                 isLoading = true;
               });
-              final reply = await _generateAiReply(text);
+              final reply = await _generateAiReply(agent, text);
               if (!sheetContext.mounted) return;
               setSheetState(() {
                 isLoading = false;
@@ -334,11 +342,12 @@ class TopJobsScreen extends StatelessWidget {
     );
   }
 
-  Future<String> _generateAiReply(String userMessage) async {
+  Future<String> _generateAiReply(AiAgent agent, String userMessage) async {
     try {
-      return await CareerAiService.analyze(userMessage);
+      final reply = await agent.send(userMessage);
+      return reply.text;
     } catch (_) {
-      return 'I could not reach Career AI. Please sign in and try again later.';
+      return 'I could not reach the assistant. Please try again.';
     }
   }
 }
