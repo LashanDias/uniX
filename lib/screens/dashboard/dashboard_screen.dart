@@ -199,6 +199,64 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  // AI Assistant card. This was lost when Quick Access became
+                  // a horizontal strip; it is the only entry point to the
+                  // assistant from the dashboard.
+                  InkWell(
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/ai_market_assistant'),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            flex: 5,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI Assistant',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Ask about notes, formulas, hostels, food '
+                                  'or jobs.',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Image.asset(
+                            'assets/images/ai_bot.png',
+                            width: 86,
+                            height: 86,
+                            fit: BoxFit.contain,
+                            // A missing asset must not break the card.
+                            errorBuilder: (_, _, _) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   const Text(
                     'Quick Access',
                     style: TextStyle(
