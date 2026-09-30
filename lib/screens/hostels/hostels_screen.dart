@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import 'girls_hostel_screen.dart';
 import '../../widgets/app_back_button.dart';
+import '../../widgets/safe_network_image.dart';
 
 class HostelItem {
   const HostelItem({
@@ -11,6 +13,8 @@ class HostelItem {
     required this.imageUrl,
     required this.highlights,
     required this.price,
+    this.phone = HostelsScreen.wardenPhone,
+    this.address = HostelsScreen.campusAddress,
   });
 
   final String name;
@@ -19,10 +23,31 @@ class HostelItem {
   final String imageUrl;
   final List<String> highlights;
   final int price;
+
+  /// Warden hotline students should call about this hostel.
+  final String phone;
+
+  /// Street address used for the map link and the contact card.
+  final String address;
+
+  /// Google Maps search link for [address].
+  Uri get mapsUrl => Uri.https('www.google.com', '/maps/search/', {
+    'api': '1',
+    'query': '$name, $address',
+  });
+
+  /// `tel:` link for [phone], with spaces stripped so dialers accept it.
+  Uri get phoneUrl => Uri(scheme: 'tel', path: phone.replaceAll(' ', ''));
 }
 
 class HostelsScreen extends StatelessWidget {
   const HostelsScreen({super.key});
+
+  /// Single hotline for all campus hostels.
+  static const wardenPhone = '0112 100 5000';
+
+  /// Campus address shared by every hostel block.
+  static const campusAddress = 'SLTC Research University, Ingiriya Road, Padukka, Sri Lanka';
 
   static const hostels = [
     HostelItem(
@@ -414,49 +439,171 @@ class HostelDetailsScreen extends StatelessWidget {
   const HostelDetailsScreen({super.key, required this.hostel});
   final HostelItem hostel;
 
+  /// Viewport heights below this drop decoration in favour of content.
+  ///
+  /// Real phones are far taller; this only trips on a resized desktop window
+  /// or a split-screen view, where a 190px photo would hide the warden's
+  /// number and the room list entirely.
+  static const compactHeightBreakpoint = 420.0;
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(hostel.name), centerTitle: true),
-    body: ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+    // LayoutBuilder, not MediaQuery: we need the height actually granted to
+    // the body, which is the window minus the app bar and any system insets.
+    body: LayoutBuilder(
+      builder: (context, constraints) => _body(
+        compact: constraints.maxHeight < compactHeightBreakpoint,
+      ),
+    ),
+  );
+
+  Widget _body({required bool compact}) => ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        children: [
+          // The hero photo is decoration; on a very short viewport the
+          // contact details and room list matter more.
+          if (!compact) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: SafeNetworkImage(
+                url: hostel.imageUrl,
+                height: 190,
+                placeholderIcon: Icons.apartment_outlined,
+                placeholderLabel: hostel.name,
+              ),
+            ),
+            const SizedBox(height: 18),
+            // The AppBar already shows the name, so repeat it only when
+            // there is room to spare.
+            Text(
+              hostel.name,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+          ],
+          Text(
+            '${hostel.rooms} rooms available  •  ${hostel.gender} students',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          _HostelContactCard(hostel: hostel),
+          const SizedBox(height: 22),
+          const Text(
+            'Choose your room',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          _RoomCard(
+            hostel: hostel,
+            title: '2-sharing room',
+            beds: '2 beds available',
+            price: hostel.price + 2500,
+          ),
+          _RoomCard(
+            hostel: hostel,
+            title: '4-sharing room',
+            beds: '3 beds available',
+            price: hostel.price,
+          ),
+          _RoomCard(
+            hostel: hostel,
+            title: '6-sharing room',
+            beds: '2 beds available',
+            price: hostel.price - 1500,
+          ),
+        ],
+      );
+}
+
+/// Warden hotline, address and map link for a hostel.
+///
+/// Students repeatedly needed a way to reach the warden and find the block
+/// before booking, so this sits at the bottom of every hostel detail page.
+class _HostelContactCard extends StatelessWidget {
+  const _HostelContactCard({required this.hostel});
+
+  final HostelItem hostel;
+
+  Future<void> _open(BuildContext context, Uri url) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not open this. Details: ${hostel.phone}')),
+        );
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not open this. Details: ${hostel.phone}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.primaryLight,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Image.network(hostel.imageUrl, height: 190, fit: BoxFit.cover),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          hostel.name,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          '${hostel.rooms} rooms available  •  ${hostel.gender} students',
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 22),
         const Text(
-          'Choose your room',
+          'Contact Us',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 4),
+        const Text(
+          'Call the warden with any question before you book.',
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 14),
+        InkWell(
+          onTap: () => _open(context, hostel.phoneUrl),
+          child: Row(
+            children: [
+              const Icon(Icons.phone_outlined, size: 18, color: AppColors.primary),
+              const SizedBox(width: 10),
+              Text(
+                hostel.phone,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 12),
-        _RoomCard(
-          hostel: hostel,
-          title: '2-sharing room',
-          beds: '2 beds available',
-          price: hostel.price + 2500,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.location_on_outlined, size: 18, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                hostel.address,
+                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+              ),
+            ),
+          ],
         ),
-        _RoomCard(
-          hostel: hostel,
-          title: '4-sharing room',
-          beds: '3 beds available',
-          price: hostel.price,
-        ),
-        _RoomCard(
-          hostel: hostel,
-          title: '6-sharing room',
-          beds: '2 beds available',
-          price: hostel.price - 1500,
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _open(context, hostel.mapsUrl),
+            icon: const Icon(Icons.map_outlined, size: 18),
+            label: const Text('View on Google Maps'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+            ),
+          ),
         ),
       ],
     ),
