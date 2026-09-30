@@ -23,17 +23,17 @@ import 'screens/hostels/hostels_screen.dart';
 import 'screens/lost_found/lost_found_screen.dart';
 import 'screens/restaurants/restaurants_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
+import 'screens/activity/recent_activity_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/recruiter/recruiter_dashboard_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/tickets/tickets_screen.dart';
 import 'screens/marketplace/rental_flow_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const UnixApp());
 }
 
@@ -117,6 +117,10 @@ class UnixApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const FindItemScreen());
           case '/restaurants':
             return MaterialPageRoute(builder: (_) => const RestaurantsScreen());
+          case '/recent_activity':
+            return MaterialPageRoute(
+              builder: (_) => const RecentActivityScreen(),
+            );
           case '/notifications':
             return MaterialPageRoute(
               builder: (_) => const NotificationsScreen(),
@@ -125,6 +129,10 @@ class UnixApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const ProfileScreen());
           case '/edit_profile':
             return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+          case '/admin':
+            return MaterialPageRoute(
+              builder: (_) => const AdminDashboardScreen(),
+            );
           case '/recruiter':
             return MaterialPageRoute(
               builder: (_) => const RecruiterDashboardScreen(),

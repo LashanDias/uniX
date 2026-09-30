@@ -64,6 +64,16 @@ class AuthService {
   static Future<void> _checkAccount(User user) async {
     try {
       final profile = await ProfileStorage.load();
+      // An admin can block an account from the admin panel; enforce it here
+      // so a blocked student cannot keep using an existing session.
+      if (profile['blocked'] == true) {
+        throw AuthException(
+          code: 'account-blocked',
+          message:
+              'This account has been blocked by an administrator. '
+              'Contact the UNIX team if you think this is a mistake.',
+        );
+      }
       institutionalEmail(user.email ?? '', role: profile['role']?.toString());
     } catch (_) {
       await _auth.signOut();

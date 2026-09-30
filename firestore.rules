@@ -9,14 +9,16 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email.matches('^[^@]+@sltc[.]ac[.]lk$');
     }
 
+    function isAdminEmail(email) {
+      return email == 'amashanki191@gmail.com'
+        || email == 'cit-24-01-0361@sltc.ac.lk'
+        || email == 'malshikulasekara4816@gmail.com'
+        || email == 'sandupamabimandhi@gmail.com'
+        || email == 'jaksikasivakumar@gmail.com';
+    }
+
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'amashanki191@gmail.com' ||
-        request.auth.token.email == 'cit-24-01-0361@sltc.ac.lk' ||
-        request.auth.token.email == 'malshikulasekara4816@gmail.com' ||
-        request.auth.token.email == 'sandupamabimandhi@gmail.com' ||
-        request.auth.token.email == 'jaksikasivakumar@gmail.com'
-      );
+      return isSignedIn() && isAdminEmail(request.auth.token.email);
     }
 
     function ownsProfile(uid) {
@@ -53,10 +55,23 @@ service cloud.firestore {
         && request.resource.data.matchPercentage == 0
         && request.resource.data.postedAt == request.time
         && request.resource.data.updatedAt == request.time;
+      allow update, delete: if isSignedIn()
+        && (request.auth.uid == resource.data.recruiterId || isAdmin());
     }
 
     function isOwnerOrAdmin(resourceOwnerId) {
       return isSignedIn() && (request.auth.uid == resourceOwnerId || isAdmin());
+    }
+
+    // All transitions and scheduling are server-owned callable transactions.
+    match /lostFound/{itemId} {
+      allow read: if isSignedIn() && (resource.data.status == 'active'
+        || resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+    match /users/{uid}/notifications/{notificationId} {
+      allow read: if ownsProfile(uid);
+      allow write: if false;
     }
 
     match /products/{id} {
@@ -81,7 +96,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSLTCUser()
         && request.resource.data.keys().hasOnly(['title', 'subject', 'description', 'fileType',
-          'fileUrl', 'ownerId', 'uploadedDate', 'createdAt'])
+          'fileUrl', 'ownerId', 'uploadedDate', 'createdAt', 'degree', 'topic'])
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
@@ -92,17 +107,41 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if ownsProfile(uid);
-      allow create, update: if ownsProfile(uid)
-        && request.resource.data.keys().hasOnly([
-          'name', 'email', 'role', 'birthday', 'year', 'district', 'image', 'updatedAt'
-        ])
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.name is string
-        && request.resource.data.name.size() <= 200
-        && request.resource.data.role in ['Student', 'Recruiter']
-        && (isSLTCUser() || isAdmin() || request.resource.data.role == 'Recruiter')
-        && request.resource.data.updatedAt == request.time;
+      // Shape every profile write must satisfy, whoever makes it.
+      function validProfile() {
+        return request.resource.data.keys().hasOnly([
+            'name', 'email', 'role', 'birthday', 'year', 'district', 'image',
+            'blocked', 'updatedAt'
+          ])
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 200
+          && request.resource.data.role in ['Student', 'Recruiter']
+          && (isSLTCUser() || isAdmin() || request.resource.data.role == 'Recruiter')
+          && request.resource.data.updatedAt == request.time;
+      }
+
+      // Admins list every account in the admin panel; students see only their
+      // own profile.
+      allow read: if ownsProfile(uid) || isAdmin();
+
+      // Nobody signs themselves up pre-blocked.
+      allow create: if ownsProfile(uid) && validProfile()
+        && request.resource.data.get('blocked', false) == false;
+
+      // The owner may edit their profile but never their own blocked flag.
+      allow update: if ownsProfile(uid) && validProfile()
+        && request.resource.data.get('blocked', false)
+           == resource.data.get('blocked', false);
+
+      // An admin may flip the blocked flag and nothing else. Admin accounts
+      // themselves cannot be blocked, so the panel can never lock every
+      // administrator out.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['blocked', 'updatedAt'])
+        && request.resource.data.blocked is bool
+        && !isAdminEmail(resource.data.email);
     }
   }
 }
