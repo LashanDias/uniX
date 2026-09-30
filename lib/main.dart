@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'models/app_models.dart';
@@ -46,7 +48,7 @@ class UnixApp extends StatelessWidget {
       title: 'UNIX Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/login',
+      home: const AuthGate(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/login':
@@ -147,4 +149,93 @@ class UnixApp extends StatelessWidget {
       },
     );
   }
+}
+
+/// Decides what the app opens on.
+///
+/// Previously `initialRoute: '/login'` sent everybody to the login form, so a
+/// student who was already signed in had to type their password again on every
+/// launch. This waits for Firebase to report the stored session and then opens
+/// the right home screen, falling back to the login form when nobody is signed
+/// in.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  /// The signed-in user stream, or null when Firebase is not available.
+  ///
+  /// Widget tests pump `UnixApp` without calling `Firebase.initializeApp`, and
+  /// a missing Firebase app should show the login form rather than crash.
+  static Stream<User?>? _authState() {
+    try {
+      return FirebaseAuth.instance.authStateChanges();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = _authState();
+    if (authState == null) return const LoginScreen();
+    return StreamBuilder<User?>(
+      stream: authState,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const _StartupSplash();
+        }
+        if (snapshot.data == null) return const LoginScreen();
+        return const _SignedInHome();
+      },
+    );
+  }
+}
+
+/// Sends a signed-in user to the home screen their role expects.
+class _SignedInHome extends StatelessWidget {
+  const _SignedInHome();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+    future: AuthService.homeRoute(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const _StartupSplash();
+      }
+      // If the profile could not be read, fall back to the student home
+      // rather than stranding the user on a spinner.
+      return snapshot.data == '/recruiter'
+          ? const RecruiterDashboardScreen()
+          : const MainLayout();
+    },
+  );
+}
+
+/// Shown for the moment it takes to read the stored session.
+class _StartupSplash extends StatelessWidget {
+  const _StartupSplash();
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    body: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 88,
+            width: 88,
+            child: Image(
+              image: AssetImage('assets/images/unix_logo.png'),
+              fit: BoxFit.contain,
+            ),
+          ),
+          SizedBox(height: 24),
+          SizedBox(
+            height: 22,
+            width: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      ),
+    ),
+  );
 }
