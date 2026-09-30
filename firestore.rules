@@ -123,6 +123,35 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Hostel room requests: a student submits and reads their own.
+    match /hostelBookings/{id} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSLTCUser()
+        && request.resource.data.keys().hasOnly(['userId', 'hostel',
+          'roomNumber', 'floor', 'sharing', 'monthlyPrice', 'checkIn',
+          'checkOut', 'status', 'reference', 'requestedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.hostel is string
+        && request.resource.data.hostel.size() > 0
+        && request.resource.data.roomNumber is string
+        && request.resource.data.roomNumber.size() > 0
+        && request.resource.data.roomNumber.size() <= 10
+        && request.resource.data.floor is string
+        && request.resource.data.sharing in [4, 6]
+        && request.resource.data.monthlyPrice is int
+        && request.resource.data.monthlyPrice > 0
+        && request.resource.data.checkIn is timestamp
+        && request.resource.data.checkOut is timestamp
+        && request.resource.data.checkOut > request.resource.data.checkIn
+        // A student submits a request; only an admin confirms it.
+        && request.resource.data.status == 'Requested'
+        && request.resource.data.reference is string
+        && request.resource.data.reference.size() <= 12
+        && request.resource.data.requestedAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
     match /products/{id} {
       allow read: if isSignedIn();
       allow create: if isSLTCUser()

@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/girls_hostel_inventory.dart';
+import '../../services/hostel_booking_service.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/safe_network_image.dart';
 
@@ -55,63 +54,139 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
     if (dates == null || !mounted) return;
     setState(() {
       _dates = dates;
-      _checked = false;
+      // Choosing a valid stay is the availability check. Requiring a separate
+      // tap on a button near the top of the page left the room cards
+      // permanently disabled once you had scrolled down to them.
+      _checked = _nightsIn(dates) >= 1 && _nightsIn(dates) <= 90;
     });
+    if (!_checked) {
+      _message('Choose a stay between 1 and 90 nights.');
+    }
+    return;
   }
 
+  /// Shows [text] in a snack bar.
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Nights in [range], counted on calendar days.
+  int _nightsIn(DateTimeRange range) =>
+      DateTime.utc(range.end.year, range.end.month, range.end.day)
+          .difference(
+            DateTime.utc(range.start.year, range.start.month, range.start.day),
+          )
+          .inDays;
+
+  /// Sends the room request to the warden.
+  ///
+  /// This goes to Firestore rather than device storage. The previous version
+  /// wrote a note to SharedPreferences and told the student "no room has been
+  /// reserved", which meant the hostel could not actually be booked.
   Future<void> _saveRequest(HostelRoom room) async {
+    if (_dates == null) return;
     setState(() => _saving = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final drafts = prefs.getStringList('hostel.bookingDrafts.v1') ?? [];
-      final draft = jsonEncode({
-        'hostel': 'Girls Hostel • HUB 02',
-        'room': room.number,
-        'floor': room.floorLabel,
-        'sharing': room.sharing,
-        'pricePerMonth': room.monthlyPrice,
-        'checkIn': _dates!.start.toIso8601String(),
-        'checkOut': _dates!.end.toIso8601String(),
-        'status': 'Draft',
-      });
-      if (!await prefs.setStringList('hostel.bookingDrafts.v1', [
-        ...drafts,
-        draft,
-      ])) {
-        throw StateError('Save failed');
-      }
+      final booking = await HostelBookingService.book(
+        room: room,
+        checkIn: _dates!.start,
+        checkOut: _dates!.end,
+      );
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Booking draft saved'),
-          content: Text(
-            'Room ${room.number} • ${room.typeLabel}\n'
-            '${room.floorLabel}\n'
-            '${_date(_dates!.start)} – ${_date(_dates!.end)}\n'
-            '$_nights nights • LKR ${room.monthlyPrice} / month\n\n'
-            'Saved on this device. No room has been reserved and no payment '
-            'has been taken.',
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Room requested'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Room ${booking.roomNumber} • ${room.typeLabel}'),
+              Text(booking.floor),
+              const SizedBox(height: 8),
+              Text('${_date(booking.checkIn)} – ${_date(booking.checkOut)}'),
+              Text('${booking.nights} nights'),
+              Text('LKR ${booking.monthlyPrice} / month'),
+              const SizedBox(height: 14),
+              const Text('Your reference:'),
+              const SizedBox(height: 2),
+              Text(
+                booking.reference,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'The warden can see this request. Quote the reference when '
+                'you speak to them. No payment has been taken.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Done'),
             ),
           ],
         ),
       );
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save your draft. Please retry.'),
-          ),
-        );
+    } on StateError catch (error) {
+      // A guest cannot book, so offer the way forward rather than an error
+      // they can do nothing about.
+      if (error.message.contains('sign in')) {
+        await _offerSignIn();
+      } else {
+        _message(error.message);
       }
+    } catch (_) {
+      _message('Could not send your request. Please check your connection.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// Asks a signed-out student whether they want to sign in.
+  Future<void> _offerSignIn() async {
+    final navigator = Navigator.of(context);
+    final wantsToSignIn = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign in to request a room'),
+        content: const Text(
+          'Room requests go to the hostel warden, so they need to know who '
+          'is asking. Sign in with your SLTC email to continue.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Sign in'),
+          ),
+        ],
+      ),
+    );
+    if (wantsToSignIn == true) navigator.pushNamed('/login');
+  }
+
+  /// Opens the date picker from a room card, then books that room.
+  ///
+  /// The picker lives at the top of the page, so a student who has scrolled
+  /// to a room had no way to reach it. This puts it one tap away.
+  Future<void> _chooseDatesThenBook(HostelRoom room) async {
+    await _chooseDates();
+    if (!mounted || !_checked) return;
+    await _saveRequest(room);
   }
 
   void _checkAvailability() {
@@ -228,6 +303,7 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
                       nights: _nights,
                       saving: _saving,
                       canBook: _checked,
+                      onChooseDates: () => _chooseDatesThenBook(room),
                       onSave: () => _saveRequest(room),
                     ),
                 ],
@@ -387,6 +463,7 @@ class _RoomCard extends StatelessWidget {
     required this.nights,
     required this.saving,
     required this.canBook,
+    required this.onChooseDates,
     required this.onSave,
   });
 
@@ -396,6 +473,9 @@ class _RoomCard extends StatelessWidget {
 
   /// False until dates are chosen, since a booking needs them.
   final bool canBook;
+
+  /// Opens the date picker, then books this room.
+  final VoidCallback onChooseDates;
   final VoidCallback onSave;
 
   @override
@@ -474,9 +554,16 @@ class _RoomCard extends StatelessWidget {
                     child: const Text('Fully booked'),
                   )
                 : ElevatedButton.icon(
-                    onPressed: saving || !canBook ? null : onSave,
-                    icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-                    label: Text(canBook ? 'Book now' : 'Choose dates to book'),
+                    onPressed: saving
+                        ? null
+                        : (canBook ? onSave : onChooseDates),
+                    icon: Icon(
+                      canBook
+                          ? Icons.bookmark_add_outlined
+                          : Icons.date_range_outlined,
+                      size: 18,
+                    ),
+                    label: Text(canBook ? 'Book now' : 'Choose dates & book'),
                   ),
           ),
         ],
