@@ -186,15 +186,16 @@ Baseline on arrival: analyzer clean, **2 of 38 tests failing**.
 | 3 | Lost & Found Cloud Functions backend found uncommitted in the tree, preserved in its own commit. | `f7e94d5` |
 | 4 | **Syntax error blocking every web build.** `followup_card.dart` ended a `return` with `,` instead of `;`. One character; no web build could succeed. | `b002bbe` |
 | 5 | **Login footer overflowed by 48px.** The "Don't have an account? / Sign UP" `Row` could not reflow once the card's `maxWidth` dropped to 380. Swapped for a `Wrap`. Also protects users with a large system font. | `96d2cdc` |
+| 7 | **No auth persistence.** `MaterialApp` hardcoded `initialRoute: '/login'`, so the app opened on the login form even when Firebase held a valid session -- a student who signed in yesterday had to type their password again today. Replaced with an `AuthGate` that waits for the stored session and opens `MainLayout` or `RecruiterDashboardScreen` by role, with a logo splash while the session is read. Treats an unavailable Firebase as signed out so widget tests still see the login screen. | `c26b765` |
 | 6 | **Real admin panel.** The old screen was a hardcoded list of five emails, *and it was unreachable* — the dashboard pushes `/admin` but `main.dart` had no such route, so admins landed on the login screen. Added the route and built the three-tab panel described above, plus `AdminService`, the Firestore rule changes, blocked-account sign-out, and `test/admin_service_test.dart`. | `10a1683` |
 
-Suite after this work: **57 passing, 0 failing**; `flutter analyze` clean.
+Suite after this work: **59 passing, 0 failing**; `flutter analyze` clean.
+All eight commits pushed to `origin/master`.
 
 ---
 
 ## 7. Open items / next steps
 
-- **Nothing has been pushed to GitHub yet.** Commits are local on `master`.
 - **The admin panel's authenticated screens have not been exercised against
   live Firebase.** The route and the "Admins only" guard are verified; signing
   in requires real credentials. See `TESTING_GUIDE.md`.
@@ -202,9 +203,6 @@ Suite after this work: **57 passing, 0 failing**; `flutter analyze` clean.
   `firebase deploy --only firestore:rules`. Until then the admin Users tab will
   show a load error, because the deployed rules still block admins from reading
   other profiles.
-- **No auth persistence.** `main.dart` hardcodes `initialRoute: '/login'`, so a
-  signed-in user is sent back to the login screen on every launch instead of
-  straight to their dashboard. Worth fixing.
 - **Admin list is hardcoded in two files.** Promoting someone to admin means a
   code change *and* a rules deploy. A `role: 'Admin'` field would be better.
 - Several `curly_braces_in_flow_control_structures` lints remain in the
