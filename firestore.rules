@@ -55,7 +55,30 @@ service cloud.firestore {
         && request.resource.data.matchPercentage == 0
         && request.resource.data.postedAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow update, delete: if isSignedIn()
+      // A recruiter may correct the wording of their own vacancy, but not
+      // reassign it, backdate it, or set the match score students see. The
+      // create rule pins matchPercentage to 0; without the same limit on
+      // update, any recruiter could edit their job to claim a 100% match.
+      allow update: if isSignedIn()
+        && (request.auth.uid == resource.data.recruiterId || isAdmin())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'company', 'location', 'type', 'description',
+          'requirements', 'contactEmail', 'updatedAt'
+        ])
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.company.size() > 0
+        && request.resource.data.company.size() <= 200
+        && request.resource.data.location.size() > 0
+        && request.resource.data.location.size() <= 200
+        && request.resource.data.type in ['Full-time', 'Part-time', 'Internship', 'Contract']
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 5000
+        && request.resource.data.requirements.size() > 0
+        && request.resource.data.requirements.size() <= 5000
+        && request.resource.data.contactEmail.size() <= 254
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isSignedIn()
         && (request.auth.uid == resource.data.recruiterId || isAdmin());
     }
 
@@ -114,6 +137,7 @@ service cloud.firestore {
         && request.resource.data.lines.size() <= 40
         && request.resource.data.total is number
         && request.resource.data.total >= 0
+        && request.resource.data.total <= 100000
         && request.resource.data.status == 'Placed'
         && request.resource.data.note is string
         && request.resource.data.note.size() <= 200
@@ -144,6 +168,10 @@ service cloud.firestore {
         && request.resource.data.checkIn is timestamp
         && request.resource.data.checkOut is timestamp
         && request.resource.data.checkOut > request.resource.data.checkIn
+        // 90 nights, matching HostelBookingService.maxNights. Without this
+        // the client was the only thing stopping a ten-year request.
+        && request.resource.data.checkOut
+             < request.resource.data.checkIn + duration.value(90, 'd')
         // A student submits a request; only an admin confirms it.
         && request.resource.data.status == 'Requested'
         && request.resource.data.reference is string
@@ -164,10 +192,26 @@ service cloud.firestore {
         && request.resource.data.category in ['Books', 'Electronics', 'Other']
         && request.resource.data.price is number && request.resource.data.price >= 0
         && request.resource.data.description is string
+        && request.resource.data.description.size() <= 2000
         && request.resource.data.imageUrl is string
+        && request.resource.data.imageUrl.size() <= 500
         && request.resource.data.sellerName is string
+        && request.resource.data.sellerName.size() <= 200
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if isOwnerOrAdmin(resource.data.sellerId);
+      // A seller may edit their listing but not hand it to someone else or
+      // backdate it, and the same length caps apply as on create.
+      allow update: if isOwnerOrAdmin(resource.data.sellerId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'category', 'price', 'description', 'imageUrl'
+        ])
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.category in ['Books', 'Electronics', 'Other']
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.imageUrl.size() <= 500;
+      allow delete: if isOwnerOrAdmin(resource.data.sellerId);
     }
 
     match /notes/{id} {
@@ -178,10 +222,28 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
         && request.resource.data.subject is string
+        && request.resource.data.subject.size() <= 100
         && request.resource.data.fileType is string
+        && request.resource.data.fileType.size() <= 20
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.fileUrl is string
+        && request.resource.data.fileUrl.size() <= 500
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if isOwnerOrAdmin(resource.data.ownerId);
+      // The owner may correct the details but not reassign the note or
+      // backdate it.
+      allow update: if isOwnerOrAdmin(resource.data.ownerId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'subject', 'description', 'fileType', 'fileUrl',
+          'degree', 'topic', 'uploadedDate'
+        ])
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.fileUrl.size() <= 500;
+      allow delete: if isOwnerOrAdmin(resource.data.ownerId);
     }
 
     match /users/{uid} {
