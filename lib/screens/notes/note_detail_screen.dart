@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
 import '../../services/notes_service.dart';
@@ -8,6 +10,73 @@ class NoteDetailScreen extends StatelessWidget {
   final NoteItem note;
 
   const NoteDetailScreen({super.key, required this.note});
+
+
+  /// Opens the note's file so the browser or OS can save it.
+  ///
+  /// This used to show "Downloading note..." and do nothing at all. A note
+  /// with no file attached now says so instead of pretending.
+  Future<void> _download(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final url = note.fileUrl.trim();
+    if (url.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This note has no file attached, only the description below.',
+          ),
+        ),
+      );
+      return;
+    }
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('The file link on this note is not valid.'),
+        ),
+      );
+      return;
+    }
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not open the file.')),
+        );
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not open the file.')),
+      );
+    }
+  }
+
+  /// Copies the note to the clipboard.
+  ///
+  /// The old version claimed "Share link copied!" while copying nothing.
+  Future<void> _share(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final url = note.fileUrl.trim();
+    final text = url.isEmpty
+        ? '${note.title}\nSubject: ${note.subject}\n\n${note.description}'
+        : '${note.title}\nSubject: ${note.subject}\n$url';
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            url.isEmpty
+                ? 'Note details copied. It has no file link to share.'
+                : 'Note link copied.',
+          ),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Clipboard unavailable on this device.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,13 +170,7 @@ class NoteDetailScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Downloading note...'),
-                                ),
-                              );
-                            },
+                            onPressed: () => _download(context),
                             icon: const Icon(Icons.download, size: 18),
                             label: const Text(
                               'Download',
@@ -124,13 +187,7 @@ class NoteDetailScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Share link copied!'),
-                                ),
-                              );
-                            },
+                            onPressed: () => _share(context),
                             icon: const Icon(Icons.share, size: 18),
                             label: const Text(
                               'Share',

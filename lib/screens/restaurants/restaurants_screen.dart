@@ -241,16 +241,23 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                       const SizedBox(height: 24),
                       if (_loading)
                         const Center(child: CircularProgressIndicator())
-                      else if (_failed) ...[
-                        const FoodNotice(
-                          text:
-                              'Could not load your saved restaurant list. Your data has not been replaced.',
-                        ),
-                        TextButton(
-                          onPressed: _load,
-                          child: const Text('Retry'),
-                        ),
-                      ] else ...[
+                      else ...[
+                        // A storage failure loses the places this student
+                        // added and their saved marks, nothing more. Showing
+                        // the notice *instead of* the list hid all ten
+                        // built-in venues, which is how this screen came to
+                        // look completely empty.
+                        if (_failed) ...[
+                          const FoodNotice(
+                            text:
+                                'Could not load your saved restaurants. The places below are still complete.',
+                          ),
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Retry'),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         Text(
                           '${places.length} places to explore',
                           style: const TextStyle(

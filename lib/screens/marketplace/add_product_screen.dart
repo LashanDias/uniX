@@ -123,10 +123,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
         imageQuality: 85,
       );
       if (picked != null && mounted) setState(() => productImage = picked);
-    } catch (_) {
+    } catch (error) {
+      // Naming the failure matters: a blocked file dialog, a denied gallery
+      // permission and a plugin that is not registered on this platform all
+      // produced the same unhelpful line before.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open the image picker.')),
+          SnackBar(
+            content: Text(
+              'Could not open the image picker ($error). '
+              'On a browser, allow this site to open files.',
+            ),
+            duration: const Duration(seconds: 6),
+          ),
         );
       }
     }
