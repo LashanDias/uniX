@@ -1,6 +1,14 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Firestore exports. Written by the backup function's service account,
+    // which bypasses these rules; no client may ever read or write them.
+    // Paths not matched here are denied anyway, but a database export is
+    // every student's data in one file, so say it explicitly.
+    match /backups/{allPaths=**} {
+      allow read, write: if false;
+    }
+
     match /products/{uid}/{file} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid

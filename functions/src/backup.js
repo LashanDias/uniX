@@ -26,6 +26,19 @@ function folderFor(at) {
 }
 
 /**
+ * Splits `gs://bucket/some/prefix` into its parts.
+ *
+ * Backups live under a prefix in the project's existing bucket, so the
+ * pruner has to know where the dated folders start. Reading the first path
+ * segment instead would see the prefix and never match a date.
+ */
+function parseBucketUri(uri) {
+  const withoutScheme = uri.replace(/^gs:\/\//, '');
+  const [name, ...rest] = withoutScheme.split('/').filter(Boolean);
+  return { bucketName: name, prefix: rest.join('/') };
+}
+
+/**
  * Whether a backup folder is older than [keepDays].
  *
  * Folder names are ISO dates, so a string compare against the cutoff date is
@@ -38,25 +51,43 @@ function isExpired(folderName, now, keepDays = KEEP_DAYS) {
 }
 
 /**
+ * The dated folder a stored object belongs to, or null if it is not under a
+ * dated backup folder.
+ */
+function folderOf(objectName, prefix) {
+  let rest = objectName;
+  if (prefix) {
+    if (!objectName.startsWith(`${prefix}/`)) return null;
+    rest = objectName.slice(prefix.length + 1);
+  }
+  const first = rest.split('/')[0];
+  return first || null;
+}
+
+/**
  * Builds the backup runner.
  *
  * @param {object} deps
  * @param {string} deps.projectId
- * @param {string} deps.bucket        destination, e.g. `gs://my-app-backups`
- * @param {object} [deps.client]      injectable for tests
- * @param {object} [deps.storage]     injectable for tests
+ * @param {string} deps.bucket     destination, e.g. `gs://my-bucket/backups`
+ * @param {object} [deps.client]   injectable for tests
+ * @param {object} [deps.storage]  injectable for tests
  */
 function backups({ projectId, bucket, client, storage }) {
   const admin = client ?? new FirestoreAdminClient();
+  const { bucketName, prefix } = parseBucketUri(bucket);
 
   return {
     folderFor,
     isExpired,
+    folderOf,
+    bucketName,
+    prefix,
 
     /** Exports the database into a dated folder under the bucket. */
     async run(now = new Date()) {
       const name = admin.databasePath(projectId, '(default)');
-      const outputUriPrefix = `${bucket}/${folderFor(now)}`;
+      const outputUriPrefix = `${bucket.replace(/\/$/, '')}/${folderFor(now)}`;
       const [response] = await admin.exportDocuments({
         name,
         outputUriPrefix,
@@ -74,12 +105,15 @@ function backups({ projectId, bucket, client, storage }) {
      */
     async prune(now = new Date()) {
       if (!storage) return { deleted: [] };
-      const bucketName = bucket.replace('gs://', '').split('/')[0];
-      const [files] = await storage.bucket(bucketName).getFiles();
+      // Only list what is under the backup prefix, so nothing else in the
+      // bucket -- user uploads live here too -- is ever considered.
+      const [files] = await storage
+        .bucket(bucketName)
+        .getFiles(prefix ? { prefix: `${prefix}/` } : {});
       const deleted = [];
       for (const file of files) {
-        const folder = file.name.split('/')[0];
-        if (isExpired(folder, now)) {
+        const folder = folderOf(file.name, prefix);
+        if (folder && isExpired(folder, now)) {
           await file.delete();
           deleted.push(file.name);
         }
@@ -89,4 +123,11 @@ function backups({ projectId, bucket, client, storage }) {
   };
 }
 
-module.exports = { backups, folderFor, isExpired, KEEP_DAYS };
+module.exports = {
+  backups,
+  folderFor,
+  isExpired,
+  folderOf,
+  parseBucketUri,
+  KEEP_DAYS,
+};

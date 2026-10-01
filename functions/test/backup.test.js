@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { backups, folderFor, isExpired, KEEP_DAYS } = require('../src/backup');
+const { backups, folderFor, isExpired, folderOf, parseBucketUri, KEEP_DAYS } = require('../src/backup');
 
 const NOW = new Date('2026-10-01T18:30:00Z');
 
@@ -105,4 +105,75 @@ test('prune does nothing when no storage client is configured', async () => {
     client: { databasePath: () => '', exportDocuments: async () => [{}] },
   });
   assert.deepEqual((await backup.prune(NOW)).deleted, []);
+});
+
+test('parseBucketUri splits a bucket from its prefix', () => {
+  assert.deepEqual(parseBucketUri('gs://my-bucket/backups'), {
+    bucketName: 'my-bucket',
+    prefix: 'backups',
+  });
+  assert.deepEqual(parseBucketUri('gs://my-bucket'), {
+    bucketName: 'my-bucket',
+    prefix: '',
+  });
+});
+
+test('folderOf reads the dated folder from under a prefix', () => {
+  assert.equal(folderOf('backups/2026-10-01/output-0', 'backups'), '2026-10-01');
+  assert.equal(folderOf('2026-10-01/output-0', ''), '2026-10-01');
+});
+
+test('folderOf ignores objects outside the backup prefix', () => {
+  // User uploads share this bucket. Reading the first path segment without
+  // checking the prefix would treat them as backup folders.
+  assert.equal(folderOf('products/uid123/photo.png', 'backups'), null);
+  assert.equal(folderOf('users/uid123/profile/avatar', 'backups'), null);
+});
+
+test('prune never touches user uploads sharing the bucket', async () => {
+  const deleted = [];
+  const listed = [];
+  const files = [
+    { name: 'backups/2026-01-01/output-0', delete: async () => deleted.push('backups/2026-01-01/output-0') },
+    { name: 'backups/2026-09-30/output-0', delete: async () => deleted.push('backups/2026-09-30/output-0') },
+  ];
+  const storage = {
+    bucket: (name) => ({
+      getFiles: async (options) => {
+        listed.push({ name, options });
+        return [files];
+      },
+    }),
+  };
+
+  const backup = backups({
+    projectId: 'demo',
+    bucket: 'gs://demo.firebasestorage.app/backups',
+    client: { databasePath: () => '', exportDocuments: async () => [{}] },
+    storage,
+  });
+  const result = await backup.prune(NOW);
+
+  // Listing is scoped to the prefix, so a product image is never even seen.
+  assert.equal(listed[0].name, 'demo.firebasestorage.app');
+  assert.deepEqual(listed[0].options, { prefix: 'backups/' });
+  assert.deepEqual(result.deleted, ['backups/2026-01-01/output-0']);
+  assert.deepEqual(deleted, ['backups/2026-01-01/output-0']);
+});
+
+test('run writes under the prefix', async () => {
+  let prefixUsed = null;
+  const backup = backups({
+    projectId: 'demo',
+    bucket: 'gs://demo.firebasestorage.app/backups',
+    client: {
+      databasePath: () => 'projects/demo/databases/(default)',
+      exportDocuments: async (request) => {
+        prefixUsed = request.outputUriPrefix;
+        return [{}];
+      },
+    },
+  });
+  await backup.run(NOW);
+  assert.equal(prefixUsed, 'gs://demo.firebasestorage.app/backups/2026-10-01');
 });

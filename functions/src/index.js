@@ -40,8 +40,11 @@ exports.cleanupLostFoundFollowup = onDocumentWritten('lostFound/{itemId}', event
 // Daily Firestore backup. Firestore keeps no copy of a deleted or overwritten
 // document, so without this a mistake is unrecoverable. Runs at 18:30 UTC,
 // which is midnight in Sri Lanka, so a day's data is complete before it runs.
+// Defaults to a folder in the project's existing Cloud Storage bucket, so no
+// separate bucket has to be created first. storage.rules denies clients any
+// path it does not explicitly allow, and backups/ is explicitly denied too.
 const backupBucket = process.env.BACKUP_BUCKET
-  || `gs://${process.env.GCLOUD_PROJECT}-backups`;
+  || `gs://${process.env.GCLOUD_PROJECT}.firebasestorage.app/backups`;
 const backup = backups({
   projectId: process.env.GCLOUD_PROJECT,
   bucket: backupBucket,
