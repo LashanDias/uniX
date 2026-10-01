@@ -14,6 +14,9 @@ String socialAuthMessage(Object error, {required String provider}) {
   switch (error.code) {
     case 'operation-not-allowed':
     case 'auth/operation-not-allowed':
+    case 'invalid-oauth-provider':
+    case 'configuration-not-found':
+    case 'auth/configuration-not-found':
       // The provider exists in the app but is off in the Firebase console.
       return '$provider sign-in is not switched on for this app yet. '
           'Sign in with your email and password instead.';

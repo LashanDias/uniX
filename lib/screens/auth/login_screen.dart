@@ -5,7 +5,12 @@ import '../../services/auth_service.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.returnAfterSignIn = false});
+  const LoginScreen({
+    super.key,
+    this.returnAfterSignIn = false,
+    this.socialSignIn,
+  });
+  final Future<AuthUser?> Function(String provider)? socialSignIn;
   final bool returnAfterSignIn;
 
   @override
@@ -70,10 +75,17 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  Future<void> _signInWithSocial(String provider) async {
+    if (_isLoading) return;
     setState(() => _isLoading = true);
     try {
-      final user = await AuthService.signInWithGoogle();
+      final user = await (widget.socialSignIn != null
+          ? widget.socialSignIn!(provider)
+          : switch (provider) {
+              'Apple' => AuthService.signInWithApple(),
+              'LinkedIn' => AuthService.signInWithLinkedIn(),
+              _ => AuthService.signInWithGoogle(),
+            });
       if (mounted && user != null) {
         if (widget.returnAfterSignIn) {
           Navigator.pop(context, true);
@@ -86,31 +98,12 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(socialAuthMessage(error, provider: 'Google')),
-          ),
+          SnackBar(content: Text(socialAuthMessage(error, provider: provider))),
         );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  /// Apple and LinkedIn sign-in are not connected yet.
-  ///
-  /// Enabling either needs an account with that provider and the matching
-  /// Firebase configuration, which is not something the app can do by itself.
-  /// Until then the buttons are visibly disabled and say so in plain words,
-  /// rather than looking live and failing.
-  void _showProviderSetupMessage(String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$provider sign-in is not available yet. '
-          'Use your SLTC email, or continue with Google.',
-        ),
-      ),
-    );
   }
 
   @override
@@ -303,21 +296,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             _socialIconButton(
                               asset: 'assets/images/google_logo.png',
-                              onTap: _isLoading ? () {} : _signInWithGoogle,
+                              label: 'Continue with Google',
+                              enabled: !_isLoading,
+                              onTap: () => _signInWithSocial('Google'),
                             ),
                             const SizedBox(width: 16),
                             _socialIconButton(
                               icon: Icons.apple,
                               color: Colors.black,
-                              enabled: false,
-                              onTap: () => _showProviderSetupMessage('Apple'),
+                              label: 'Continue with Apple',
+                              enabled: !_isLoading,
+                              onTap: () => _signInWithSocial('Apple'),
                             ),
                             const SizedBox(width: 16),
                             _socialIconButton(
                               asset: 'assets/images/linkedin_logo.png',
-                              enabled: false,
-                              onTap: () =>
-                                  _showProviderSetupMessage('LinkedIn'),
+                              label: 'Continue with LinkedIn',
+                              enabled: !_isLoading,
+                              onTap: () => _signInWithSocial('LinkedIn'),
                             ),
                           ],
                         ),
@@ -385,34 +381,48 @@ class _LoginScreenState extends State<LoginScreen> {
     Color color = AppColors.primary,
     String? asset,
     required VoidCallback onTap,
+    required String label,
     bool enabled = true,
   }) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.45,
-      child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 62,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x140F172A),
-              blurRadius: 3,
-              offset: Offset(0, 2),
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        button: true,
+        label: label,
+        enabled: enabled,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.45,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 62,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x140F172A),
+                    blurRadius: 3,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: asset != null
+                  ? Image.asset(
+                      asset,
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                    )
+                  : Icon(icon, color: color, size: 24),
             ),
-          ],
+          ),
         ),
-        child: asset != null
-            ? Image.asset(asset, width: 20, height: 20, fit: BoxFit.contain)
-            : Icon(icon, color: color, size: 24),
       ),
-    ),
     );
   }
 }

@@ -127,28 +127,63 @@ class AuthService {
             ),
           );
         }
-        try {
-          final user = result.user!;
-          final profile = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-          if (!profile.exists) {
-            final role = isRecruiterRole(signupRole) ? 'Recruiter' : 'Student';
-            institutionalEmail(user.email ?? '', role: role);
-            await ProfileStorage.save({
-              'name': user.displayName ?? '',
-              'email': user.email ?? '',
-              'role': role,
-            }, null);
-          }
-          await _checkAccount(user);
-        } catch (_) {
-          await _auth.signOut();
-          rethrow;
-        }
-        return _user(result.user!);
+        return _finishSocialSignIn(result, signupRole: signupRole);
       });
+
+  static Future<AuthUser> _finishSocialSignIn(
+    UserCredential result, {
+    String? signupRole,
+  }) async {
+    try {
+      final user = result.user!;
+      final profile = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (!profile.exists) {
+        final role = isRecruiterRole(signupRole) ? 'Recruiter' : 'Student';
+        institutionalEmail(user.email ?? '', role: role);
+        await ProfileStorage.save({
+          'name': user.displayName ?? '',
+          'email': user.email ?? '',
+          'role': role,
+        }, null);
+      }
+      await _checkAccount(user);
+    } catch (_) {
+      await _auth.signOut();
+      rethrow;
+    }
+    return _user(result.user!);
+  }
+
+  static const linkedInProviderId = String.fromEnvironment(
+    'LINKEDIN_PROVIDER_ID',
+    defaultValue: 'oidc.linkedin',
+  );
+
+  static Future<AuthUser> signInWithApple() => _signInWithProvider(
+    AppleAuthProvider()
+      ..addScope('email')
+      ..addScope('name'),
+  );
+
+  static Future<AuthUser> signInWithLinkedIn() => _signInWithProvider(
+    OAuthProvider(linkedInProviderId)
+      ..addScope('openid')
+      ..addScope('profile')
+      ..addScope('email'),
+  );
+
+  static Future<AuthUser> _signInWithProvider(
+    AuthProvider provider,
+  ) => _translate(() async {
+    // Start the popup directly from the tap; do not await anything before this.
+    final result = kIsWeb
+        ? await _auth.signInWithPopup(provider)
+        : await _auth.signInWithProvider(provider);
+    return _finishSocialSignIn(result);
+  });
 
   static Future<void> signUp({
     required String name,
