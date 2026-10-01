@@ -53,6 +53,13 @@ class FloatingIcons extends StatefulWidget {
   /// One full drift cycle.
   final Duration period;
 
+  /// Global off switch for the drift.
+  ///
+  /// A repeating animation never lets `pumpAndSettle` return, so any widget
+  /// test touching a screen with a banner would hang. Test setup turns this
+  /// off; production leaves it on. The icons still render, just at rest.
+  static bool animationsEnabled = true;
+
   /// A set that suits a food or restaurant banner.
   static const food = [
     FloatingIcon(icon: Icons.ramen_dining, left: 0.12, top: 0.18, size: 34),
@@ -127,7 +134,9 @@ class _FloatingIconsState extends State<FloatingIcons>
     super.didChangeDependencies();
     // Read the accessibility setting here rather than in initState, because
     // it comes from MediaQuery and can change while the screen is open.
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final reduceMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        !FloatingIcons.animationsEnabled;
     if (reduceMotion) {
       if (_started) {
         _controller.stop();

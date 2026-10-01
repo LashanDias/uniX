@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unix_app/core/theme/app_theme.dart';
+import 'package:unix_app/widgets/floating_icons.dart';
 import 'package:unix_app/models/restaurant.dart';
 import 'package:unix_app/services/restaurant_catalog.dart';
 import 'package:unix_app/services/restaurant_store.dart';
@@ -11,6 +12,11 @@ import 'package:unix_app/widgets/app_back_button.dart';
 import 'package:unix_app/screens/hostels/hostels_screen.dart';
 
 void main() {
+  // The hero banners drift icons forever, which stops pumpAndSettle ever
+  // returning. Hold them still for these tests.
+  setUp(() => FloatingIcons.animationsEnabled = false);
+  tearDown(() => FloatingIcons.animationsEnabled = true);
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
   test(
     'Custom restaurants and bookmarks persist across store instances',

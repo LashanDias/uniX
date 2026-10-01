@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unix_app/screens/restaurants/restaurants_screen.dart';
+import 'package:unix_app/widgets/floating_icons.dart';
 import 'package:unix_app/services/restaurant_catalog.dart';
 import 'package:unix_app/services/restaurant_store.dart';
 
@@ -16,6 +17,11 @@ class _BrokenStore extends RestaurantStore {
 }
 
 void main() {
+  // The hero banners drift icons forever, which stops pumpAndSettle ever
+  // returning. Hold them still for these tests.
+  setUp(() => FloatingIcons.animationsEnabled = false);
+  tearDown(() => FloatingIcons.animationsEnabled = true);
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets('the built-in venues still show when storage fails', (
