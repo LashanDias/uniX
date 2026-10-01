@@ -319,9 +319,14 @@ class _GirlsHostelScreenState extends State<GirlsHostelScreen> {
 class _BuildingHeader extends StatelessWidget {
   const _BuildingHeader();
 
-  /// Photo of the building, shown above the summary.
+  /// Photo of HUB 02, shown above the summary.
+  ///
+  /// A concrete building exterior, to match the hostel block rather than the
+  /// bunk-bed interior that was here before. Replace this with the real HUB
+  /// 02 photograph by dropping it in assets/images/ and pointing
+  /// SafeNetworkImage at the asset instead.
   static const photoUrl =
-      'https://images.unsplash.com/photo-1555854877-bab0e564b8d5'
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00'
       '?auto=format&fit=crop&w=900&q=80';
 
   @override

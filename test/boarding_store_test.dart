@@ -111,6 +111,29 @@ void main() {
     });
   });
 
+  group('contact details', () {
+    test('every built-in place has a phone number', () {
+      // A card with no number silently loses its Call now button, which is
+      // how three of the five ended up unreachable.
+      for (final place in BoardingStore.seeded) {
+        expect(place.hasPhone, isTrue, reason: place.name);
+      }
+    });
+
+    test('the annex has a number too', () {
+      final annex = BoardingStore.seeded.firstWhere(
+        (place) => place.category == BoardingCategory.annex,
+      );
+      expect(annex.hasPhone, isTrue);
+    });
+
+    test('a tel: link strips the spaces a dialer cannot take', () {
+      final place = BoardingStore.seeded.first;
+      expect(place.phoneUrl.scheme, 'tel');
+      expect(place.phoneUrl.path, isNot(contains(' ')));
+    });
+  });
+
   group('labels', () {
     test('shows metres under a kilometre', () {
       expect(custom('x', distanceKm: 0.35).distanceLabel, '350 m');

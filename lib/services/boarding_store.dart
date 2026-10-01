@@ -158,6 +158,7 @@ class BoardingStore {
       distanceKm: 1.6,
       rating: 3.9,
       reviewCount: 11,
+      phone: '077 885 8192',
       note: 'The safest and peaceful boarding house I ever seen.',
     ),
     BoardingPlace(
@@ -168,7 +169,7 @@ class BoardingStore {
       distanceKm: 0.35,
       rating: 5,
       reviewCount: 1,
-      phone: '+94 71 867 2930',
+      phone: '071 867 2930',
       note: 'Nice boarding house.',
     ),
     BoardingPlace(
@@ -179,6 +180,7 @@ class BoardingStore {
       distanceKm: 1,
       rating: 5,
       reviewCount: 1,
+      phone: '076 885 8023',
     ),
     BoardingPlace(
       id: 'seed-vivekapanchaya',
@@ -188,6 +190,9 @@ class BoardingStore {
       distanceKm: 0.55,
       rating: 5,
       reviewCount: 4,
+      // As supplied. Nine digits rather than the usual ten for a Sri Lankan
+      // mobile, so it may be missing one.
+      phone: '078 902 345',
     ),
     BoardingPlace(
       id: 'seed-sltc-annex',
@@ -196,7 +201,7 @@ class BoardingStore {
       category: BoardingCategory.annex,
       address: 'V34W+9WC, Padukka',
       distanceKm: 0.7,
-      phone: '+94 72 147 8876',
+      phone: '072 147 8876',
     ),
   ];
 
