@@ -24,12 +24,32 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
     _loadReports();
   }
 
+  /// True when this device's storage could not be read.
+  String? _storageError;
+
   Future<void> _loadReports() async {
-    final prefs = await SharedPreferences.getInstance();
-    final reports = (prefs.getStringList('lostFound.reports.v1') ?? [])
-        .map((s) => Map<String, dynamic>.from(jsonDecode(s) as Map))
-        .toList();
-    if (mounted) setState(() => _reports = reports);
+    // This had no error handling, so a failed read left the list empty with
+    // no sign anything had gone wrong: a report you had just saved simply
+    // vanished on reload and looked like it had never been stored.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final reports = (prefs.getStringList('lostFound.reports.v1') ?? [])
+          .map((s) => Map<String, dynamic>.from(jsonDecode(s) as Map))
+          .toList();
+      if (mounted) {
+        setState(() {
+          _reports = reports;
+          _storageError = null;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _reports = const [];
+          _storageError = 'Your saved reports could not be read ($error).';
+        });
+      }
+    }
   }
 
   static const _items = [
@@ -132,6 +152,33 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                 ),
               ),
             ),
+            if (_storageError != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _storageError!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadReports,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: Scrollbar(
                 thumbVisibility: true,
@@ -159,19 +206,10 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                       final images = List<String>.from(
                         report['images'] as List,
                       );
-                      return ListTile(
-                        leading: images.isEmpty
-                            ? const Icon(Icons.image_outlined)
-                            : Image.memory(
-                                base64Decode(images.first),
-                                width: 70,
-                                height: 70,
-                                fit: BoxFit.cover,
-                              ),
-                        title: Text(report['title'] as String),
-                        subtitle: Text(
-                          "${report['location']} — Local draft - no automatic follow-ups",
-                        ),
+                      // Matches the example cards below rather than a bare
+                      // ListTile, so a student's own report does not look
+                      // like a lesser thing than the samples.
+                      return InkWell(
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute<void>(
@@ -207,6 +245,98 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.primary),
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: images.isEmpty
+                                    ? Container(
+                                        width: 70,
+                                        height: 70,
+                                        color: AppColors.primaryLight,
+                                        child: const Icon(
+                                          Icons.image_outlined,
+                                          color: AppColors.primary,
+                                        ),
+                                      )
+                                    : Image.memory(
+                                        base64Decode(images.first),
+                                        width: 70,
+                                        height: 70,
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryLight,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Yours',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${report['type'] == 'found' ? 'Found' : 'Lost'} : ${report['title']}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      report['location'] as String,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Saved on this device',
+                                      style: TextStyle(
+                                        color: AppColors.textLight,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -517,11 +647,19 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
         'type': _type,
         'images': _images.map(base64Encode).toList(),
       });
+      // Photos are held as base64 inside the entry, so a few large ones can
+      // exceed the browser's storage quota. Say that, rather than "could not
+      // save", which gives the student nothing to act on.
       if (!await prefs.setStringList('lostFound.reports.v1', [
         report,
         ...drafts,
       ])) {
-        throw StateError('Could not save draft.');
+        throw StateError(
+          _images.isEmpty
+              ? 'Could not save this report on your device.'
+              : 'Could not save this report. Your photos may be too large '
+                    'for this device to store. Try fewer or smaller photos.',
+        );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
