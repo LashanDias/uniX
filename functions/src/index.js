@@ -6,6 +6,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { repository, ValidationError } = require('./lost_found');
 const { backups } = require('./backup');
+const { Storage } = require('@google-cloud/storage');
 initializeApp();
 const store = repository(getFirestore(), Timestamp);
 // Whether to reject requests that carry no App Check attestation.
@@ -44,6 +45,9 @@ const backupBucket = process.env.BACKUP_BUCKET
 const backup = backups({
   projectId: process.env.GCLOUD_PROJECT,
   bucket: backupBucket,
+  // Without a storage client prune() is a no-op, so old exports would pile up
+  // in the bucket forever and the 30-day retention would never apply.
+  storage: new Storage(),
 });
 
 exports.dailyFirestoreBackup = onSchedule(
