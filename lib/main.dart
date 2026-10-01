@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'services/app_check_service.dart';
+import 'services/local_firebase.dart';
 import 'services/auth_service.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
@@ -41,10 +42,18 @@ import 'screens/marketplace/rental_flow_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: LocalFirebase.enabled
+        ? LocalFirebase.options
+        : DefaultFirebaseOptions.currentPlatform,
+  );
   // Attest this client before anything talks to Firestore, so the backend can
   // tell a request from the real app apart from a script replaying a token.
-  await AppCheckService.activate();
+  if (LocalFirebase.enabled) {
+    await LocalFirebase.connect();
+  } else {
+    await AppCheckService.activate();
+  }
   runApp(const UnixApp());
 }
 
@@ -82,21 +91,15 @@ class UnixApp extends StatelessWidget {
           case '/upload_notes':
             return MaterialPageRoute(builder: (_) => const UploadNotesScreen());
           case '/notice_board':
-            return MaterialPageRoute(
-              builder: (_) => const NoticeBoardScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const NoticeBoardScreen());
           case '/settings':
-            return MaterialPageRoute(
-              builder: (_) => const SettingsScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const SettingsScreen());
           case '/formula_sheets':
             return MaterialPageRoute(
               builder: (_) => const ReferenceSheetsScreen(),
             );
           case '/short_notes':
-            return MaterialPageRoute(
-              builder: (_) => const ShortNotesScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const ShortNotesScreen());
           case '/note_detail':
             final note = settings.arguments as NoteItem;
             return MaterialPageRoute(
