@@ -9,6 +9,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email.matches('^[^@]+@sltc[.]ac[.]lk$');
     }
 
+    // Who may post student content. Four of the five admin accounts use
+    // gmail addresses, so an SLTC-only check silently stopped admins
+    // posting a product, a note, an order or a room request.
+    function isCampusMember() {
+      return isSLTCUser() || isAdmin();
+    }
+
     function isAdminEmail(email) {
       return email == 'amashanki191@gmail.com'
         || email == 'cit-24-01-0361@sltc.ac.lk'
@@ -126,7 +133,7 @@ service cloud.firestore {
     match /foodOrders/{id} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSLTCUser()
+      allow create: if isCampusMember()
         && request.resource.data.keys().hasOnly(['userId', 'restaurantName',
           'lines', 'total', 'status', 'note', 'collectionCode', 'placedAt'])
         && request.resource.data.userId == request.auth.uid
@@ -151,7 +158,7 @@ service cloud.firestore {
     match /hostelBookings/{id} {
       allow read: if isSignedIn()
         && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSLTCUser()
+      allow create: if isCampusMember()
         && request.resource.data.keys().hasOnly(['userId', 'hostel',
           'roomNumber', 'floor', 'sharing', 'monthlyPrice', 'checkIn',
           'checkOut', 'status', 'reference', 'requestedAt'])
@@ -182,7 +189,7 @@ service cloud.firestore {
 
     match /products/{id} {
       allow read: if isSignedIn();
-      allow create: if isSLTCUser()
+      allow create: if isCampusMember()
         && request.resource.data.keys().hasOnly(['title', 'category', 'price',
           'description', 'imageUrl', 'sellerId', 'sellerName', 'createdAt'])
         && request.resource.data.sellerId == request.auth.uid
@@ -216,7 +223,7 @@ service cloud.firestore {
 
     match /notes/{id} {
       allow read: if isSignedIn();
-      allow create: if isSLTCUser()
+      allow create: if isCampusMember()
         && request.resource.data.keys().hasOnly(['title', 'subject', 'description', 'fileType',
           'fileUrl', 'ownerId', 'uploadedDate', 'createdAt', 'degree', 'topic'])
         && request.resource.data.ownerId == request.auth.uid

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/restaurant.dart';
 import '../../widgets/app_back_button.dart';
+import '../../widgets/floating_icons.dart';
 import '../../services/restaurant_catalog.dart';
 import '../../services/restaurant_store.dart';
 import 'add_restaurant_screen.dart';
@@ -155,39 +156,52 @@ class _RestaurantsScreenState extends State<RestaurantsScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(24),
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: foodInk,
                           borderRadius: BorderRadius.circular(24),
                         ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Stack(
                           children: [
-                            Text(
-                              'THE CAMPUS FOOD GUIDE',
-                              style: TextStyle(
-                                color: Color(0xFFFFFFFF),
-                                fontSize: 11,
-                                letterSpacing: 2,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            // Drifting food icons fill the empty half of the
+                            // banner. Drawn rather than an image, so there is
+                            // no asset to ship and nothing to fetch.
+                            const Positioned.fill(
+                              child: FloatingIcons(icons: FloatingIcons.food),
                             ),
-                            SizedBox(height: 12),
-                            Text(
-                              'Good food.\nClose to campus.',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                height: 1.15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            Text(
-                              'Local favourites, café breaks and your SLTC canteens.',
-                              style: TextStyle(
-                                color: Color(0xFFEBF0FF),
-                                height: 1.5,
+                            Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'THE CAMPUS FOOD GUIDE',
+                                    style: TextStyle(
+                                      color: Color(0xFFFFFFFF),
+                                      fontSize: 11,
+                                      letterSpacing: 2,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Good food.\nClose to campus.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      height: 1.15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Local favourites, café breaks and your SLTC canteens.',
+                                    style: TextStyle(
+                                      color: Color(0xFFEBF0FF),
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],

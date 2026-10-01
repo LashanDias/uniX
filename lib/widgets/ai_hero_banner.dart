@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import 'floating_icons.dart';
 
 /// Blue hero banner with the AI robot, used at the top of the AI screens.
 ///
@@ -23,60 +24,70 @@ class AiHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
+    clipBehavior: Clip.antiAlias,
     decoration: BoxDecoration(
       color: AppColors.primary,
       borderRadius: BorderRadius.circular(20),
     ),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final stacked = constraints.maxWidth < stackBelowWidth;
-        final copy = Column(
-          crossAxisAlignment: stacked
-              ? CrossAxisAlignment.center
-              : CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              textAlign: stacked ? TextAlign.center : TextAlign.start,
-              style: TextStyle(
-                fontSize: stacked ? 21 : 25,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              subtitle,
-              textAlign: stacked ? TextAlign.center : TextAlign.start,
-              style: const TextStyle(color: Colors.white, height: 1.45),
-            ),
-          ],
-        );
-        final robot = Image.asset(
-          image,
-          width: stacked ? 92 : 96,
-          height: stacked ? 92 : 96,
-          fit: BoxFit.contain,
-          // A missing asset must not break the banner.
-          errorBuilder: (_, _, _) => const SizedBox.shrink(),
-        );
-        if (stacked) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [robot, const SizedBox(height: 12), copy],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: copy),
-            const SizedBox(width: 12),
-            robot,
-          ],
-        );
-      },
+    child: Stack(
+      children: [
+        const Positioned.fill(
+          child: FloatingIcons(icons: FloatingIcons.sparkles),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < stackBelowWidth;
+              final copy = Column(
+                crossAxisAlignment: stacked
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    textAlign: stacked ? TextAlign.center : TextAlign.start,
+                    style: TextStyle(
+                      fontSize: stacked ? 21 : 25,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    subtitle,
+                    textAlign: stacked ? TextAlign.center : TextAlign.start,
+                    style: const TextStyle(color: Colors.white, height: 1.45),
+                  ),
+                ],
+              );
+              final robot = Image.asset(
+                image,
+                width: stacked ? 92 : 96,
+                height: stacked ? 92 : 96,
+                fit: BoxFit.contain,
+                // A missing asset must not break the banner.
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              );
+              if (stacked) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [robot, const SizedBox(height: 12), copy],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: copy),
+                  const SizedBox(width: 12),
+                  robot,
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     ),
   );
 }

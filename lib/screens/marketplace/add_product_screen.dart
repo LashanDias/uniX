@@ -97,9 +97,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
+            // Naming the failure matters: a permission denied by the
+            // security rules and a dropped connection looked identical, so
+            // a post that was refused read as a transient glitch.
             error is StateError
                 ? error.message.toString()
-                : 'Unable to post your item. Please try again.',
+                : 'Could not post your item ($error).',
           ),
         ),
       );
