@@ -50,6 +50,14 @@ class ActivityService {
       Icons.campaign_outlined,
       '/notice_board',
     ),
+    (
+      'tickets',
+      'createdAt',
+      'title',
+      'New event',
+      Icons.confirmation_number_outlined,
+      '/tickets',
+    ),
   ];
 
   /// Merges the newest entries from each collection, newest first.

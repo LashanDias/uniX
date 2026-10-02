@@ -24,7 +24,9 @@ class CvComparisonService {
     'JavaScript': ['javascript', 'js'],
     'TypeScript': ['typescript'],
     'React': ['react', 'reactjs'],
-    'Node.js': ['node.js', 'nodejs'],
+    // "Node JS" with a space is how students most often write it, and without
+    // this alias their CV was scored as missing the skill the job asked for.
+    'Node.js': ['node.js', 'nodejs', 'node js'],
     'SQL': ['sql', 'mysql', 'postgresql'],
     'HTML': ['html', 'html5'],
     'CSS': ['css', 'css3'],
@@ -43,7 +45,10 @@ class CvComparisonService {
     'Cloud computing': ['cloud computing'],
     'C++': ['c++'],
     'C#': ['c#'],
-    '.NET': ['.net', 'dotnet'],
+    // A word boundary sits before the dot, so ".net" alone never matched
+    // inside "ASP.NET" -- a student who had written the framework's usual
+    // name was scored as not having it at all.
+    '.NET': ['.net', 'dotnet', 'asp.net', 'dot net'],
     'AWS': ['aws', 'amazon web services'],
     'Azure': ['azure'],
     'Docker': ['docker'],

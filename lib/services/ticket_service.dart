@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'auth_service.dart';
 
@@ -98,11 +99,19 @@ class TicketService {
   }
 
   /// Every published event, newest first.
-  static Stream<List<TicketEvent>> watch() => _db
-      .collection(collection)
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.map(TicketEvent.fromDoc).toList());
+  ///
+  /// With no Firebase app configured this yields an empty list rather than
+  /// throwing, so the screen shows its "no events" state instead of a red
+  /// error box -- the same way the app treats an unavailable Firebase
+  /// everywhere else.
+  static Stream<List<TicketEvent>> watch() {
+    if (Firebase.apps.isEmpty) return Stream.value(const []);
+    return _db
+        .collection(collection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(TicketEvent.fromDoc).toList());
+  }
 
   /// Publishes an event. Admins only.
   static Future<void> create({

@@ -72,8 +72,8 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> {
                   ),
                   SizedBox(height: 6),
                   Text(
-                    'Upload a note, post an item or add a vacancy and it will '
-                    'show up here. Pull down to refresh.',
+                    'Upload a note, post an item, add a vacancy or publish an '
+                    'event and it will show up here. Pull down to refresh.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
