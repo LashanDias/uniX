@@ -1,7 +1,18 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'career_analysis.dart';
 
 class RecruitmentStore {
+  /// Samples are opt-in and never replace a recruiter's existing records.
+  Future<void> addSampleRequirements() async {
+    final existing = await requirements();
+    for (final sample in sampleCareerRequirements) {
+      if (!existing.any((entry) => entry['id'] == sample['id'])) {
+        await saveRequirements(Map<String, dynamic>.from(sample));
+      }
+    }
+  }
+
   Future<Map<String, dynamic>> loadCv(String accountId) async {
     final prefs = await SharedPreferences.getInstance();
     return _decode(prefs.getString('recruitment.cv.$accountId'));

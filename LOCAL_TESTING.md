@@ -28,7 +28,7 @@ In a second terminal:
 Copy-Item .env.example .env
 
 node scripts/seed_local_users.mjs
-flutter run -d chrome --web-port 5175 --dart-define=USE_FIREBASE_EMULATORS=true
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5175 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=LOCAL_CAREER_AI=true
 ```
 
 Enter the email/password from `.env` on the normal login form. The seeder verifies both password logins and stored profile roles. It only contacts fixed localhost emulator endpoints; it never creates production accounts or prints auth tokens/passwords.
@@ -38,3 +38,30 @@ Emulator accounts are in memory by default. Run the seeder after restarting the 
 Without `USE_FIREBASE_EMULATORS=true`, the app continues using its existing Firebase project, where these test accounts do not exist. Emulator mode is restricted to debug builds. App Check is skipped only for the local demo project. For an Android emulator, add `--dart-define=FIREBASE_EMULATOR_HOST=10.0.2.2`.
 
 Google, Apple and LinkedIn are separate social sign-in flows. Use the email/password form for these sample accounts.
+
+## CV analysis and local career requests
+
+Open http://localhost:5175 in your browser and choose the Jobs tab. The web-server device avoids requiring a Chrome debugger connection.
+
+The four steps are Upload CV → Review extracted information → Skill match → Ranked jobs. PDF, DOCX and TXT are supported; scanned PDFs need pasted text. The sample CV button lets you test immediately. Four clearly labelled sample HR requirements are added once without replacing existing requirements. HR documents saved from the existing recruiter workspace are also available to the student on the same browser/origin. Sample applications are never submitted.
+
+Matching and extraction work without a network or model. Section extraction uses CV headings; review/edit the extracted text. The score uses recognised skills (70%), plus explicitly specified education, experience and location (10% each), excluding unspecified criteria. Uploaded free-text HR requirements currently use skill coverage unless structured criteria are provided. Experience requires explicit years in the Experience section. Scores are document coverage, not a hiring prediction or applicant percentile.
+
+For the optional local language model, start this adapter in another terminal:
+
+```powershell
+node --env-file=.env scripts/local_career_ai.mjs
+```
+
+The adapter listens only on `127.0.0.1:8787` and calls an already-running Ollama instance on `127.0.0.1:11434`. Set `UNIX_LOCAL_AI_MODEL` in `.env` to an installed model name (default `qwen2.5:0.5b`). It does not install/download a model or send requests to a hosted service. Check `http://127.0.0.1:8787/health` for `modelAvailable`. See the [Ollama chat API](https://docs.ollama.com/api/chat).
+
+Ask AI sends the selected job and extracted skill-match evidence, not the whole CV, to this local adapter. If the model is absent, stopped or returns an invalid answer, the UI explicitly switches to offline guidance for scores, learning plans and interview preparation. There is no simulated model response. On this PC no Ollama executable was found during setup, so the tested runtime uses that fallback.
+
+Keep the same browser address (use `localhost:5175` consistently); `127.0.0.1:5175` has separate browser storage. Local CVs/HR requirements are not synced across devices.
+
+Checks:
+
+```powershell
+node --test scripts/local_career_ai.test.mjs
+flutter test test/career_flow_test.dart test/recruitment_comparison_test.dart
+```
