@@ -26,6 +26,19 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
     }
   ];
 
+  /// Starts the conversation over, clearing the agent's memory too.
+  void _clearChat() {
+    _agent.reset();
+    setState(() {
+      messages
+        ..clear()
+        ..add({
+          'sender': 'ai',
+          'text': "Hi I'm your AI market assistant , how can I help you today ?",
+        });
+    });
+  }
+
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
     setState(() {
@@ -60,8 +73,9 @@ class _AiMarketAssistantScreenState extends State<AiMarketAssistantScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz),
-            onPressed: () {},
+            tooltip: 'Clear this conversation',
+            icon: const Icon(Icons.delete_sweep_outlined),
+            onPressed: _clearChat,
           ),
         ],
       ),

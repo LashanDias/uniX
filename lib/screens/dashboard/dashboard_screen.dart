@@ -95,10 +95,6 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () {},
-                      ),
                       const Expanded(
                         child: Text.rich(
                           TextSpan(

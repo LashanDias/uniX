@@ -102,55 +102,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // This screen used to offer "Continue with Google" and
+                  // "Continue with Apple" buttons that did nothing, and they
+                  // could not do anything useful here either: an account
+                  // created through Google or Apple has no password in this app
+                  // to reset. Saying so is more help than a dead button.
+                  const Divider(),
+                  const SizedBox(height: 12),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.textLight,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
                         child: Text(
-                          'or',
+                          'Signed up with Google or Apple? You have no password '
+                          'here to reset. Go back and use that button on the '
+                          'login screen instead.',
                           style: TextStyle(
-                            color: AppColors.textLight,
+                            color: AppColors.textSecondary,
                             fontSize: 12,
+                            height: 1.4,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider()),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: Image.asset(
-                      'assets/images/images__2_-removebg-preview (1)_3.png',
-                      height: 20,
-                    ),
-                    label: const Text(
-                      'Continue with Google',
-                      style: TextStyle(color: AppColors.textPrimary),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF8FAFC),
-                      side: const BorderSide(color: AppColors.border),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.apple,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                    label: const Text(
-                      'Continue with Apple',
-                      style: TextStyle(color: AppColors.textPrimary),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF8FAFC),
-                      side: const BorderSide(color: AppColors.border),
-                    ),
                   ),
                   const SizedBox(height: 32),
 

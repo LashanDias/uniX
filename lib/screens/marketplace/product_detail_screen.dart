@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
@@ -9,6 +10,31 @@ class ProductDetailScreen extends StatelessWidget {
   final ProductItem product;
 
   const ProductDetailScreen({super.key, required this.product});
+
+  /// Puts the listing on the clipboard so a student can pass it on.
+  ///
+  /// A listing carries no phone number, so there is nothing to dial; sharing
+  /// the details is the useful action that is actually possible.
+  Future<void> _copyDetails(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final text = '''
+${product.title}
+Rs. ${product.price.toInt()}
+Seller: ${product.sellerName}
+
+${product.description}'''
+        .trim();
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Item details copied.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Clipboard unavailable on this device.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,24 +182,34 @@ class ProductDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
               ],
 
+              // "chat with seller" opened the AI assistant, not the seller,
+              // and "call" did nothing at all -- a listing carries no phone
+              // number, so there was never anyone to ring. Both are now
+              // labelled for what they actually do.
               Row(
                 children: [
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pushNamed(context, '/ai_market_assistant');
                       },
-                      child: const Text('chat with seller', style: TextStyle(fontSize: 13)),
+                      icon: const Icon(Icons.auto_awesome_outlined, size: 16),
+                      label: const Text(
+                        'Ask the AI assistant',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 1,
                     child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                      child: const Text('call', style: TextStyle(fontSize: 13)),
+                      onPressed: () => _copyDetails(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      child: const Text('Copy', style: TextStyle(fontSize: 13)),
                     ),
                   ),
                 ],

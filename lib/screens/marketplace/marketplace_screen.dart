@@ -45,7 +45,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             tooltip: 'Rent equipment',
             onPressed: () => Navigator.pushNamed(context, '/rental-flow'),
           ),
-          IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+
         ],
       ),
       body: SafeArea(

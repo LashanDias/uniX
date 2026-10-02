@@ -159,10 +159,12 @@ class _RentalFlowScreenState extends State<RentalFlowScreen> {
         ),
       ),
       const Spacer(),
-      ElevatedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.chat_outlined),
-        label: const Text('Open coordination chat'),
+      // There is no messaging feature, so this button opened nothing. Rather
+      // than imply one exists, it now says how to arrange the handover.
+      const Text(
+        'Arrange the handover with the other student directly. In-app '
+        'messaging is not available yet.',
+        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
       ),
     ],
   );

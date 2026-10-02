@@ -155,7 +155,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.more_horiz), onPressed: () {}),
+
         ],
       ),
       body: SafeArea(
