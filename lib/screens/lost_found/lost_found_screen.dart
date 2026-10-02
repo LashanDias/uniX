@@ -15,6 +15,20 @@ class LostFoundScreen extends StatefulWidget {
   State<LostFoundScreen> createState() => _LostFoundScreenState();
 }
 
+/// Reads back the day a report was saved on this device.
+///
+/// Reports saved before this field existed have no date, so they say where
+/// they live instead of showing a wrong one.
+String _savedDate(String? iso) {
+  final saved = iso == null ? null : DateTime.tryParse(iso);
+  if (saved == null) return 'Saved on this device';
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return '${months[saved.month - 1]} ${saved.day}, ${saved.year}';
+}
+
 class _LostFoundScreenState extends State<LostFoundScreen> {
   int _tab = 0;
   List<Map<String, dynamic>> _reports = [];
@@ -221,7 +235,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                               title: report['title'] as String,
                               description: report['description'] as String,
                               location: report['location'] as String,
-                              date: 'Saved on this device',
+                              date: _savedDate(report['savedAt'] as String?),
                               type: (report['type'] as String?) ?? 'lost',
                               photos: images,
                               isMine: true,
@@ -781,6 +795,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
         'category': _category,
         'type': _type,
         'images': _images.map(base64Encode).toList(),
+        // Without this the detail page had no date to show, so a report a
+        // student saved looked less complete than the samples beside it.
+        'savedAt': DateTime.now().toIso8601String(),
       });
       // Photos are held as base64 inside the entry, so a few large ones can
       // exceed the browser's storage quota. Say that, rather than "could not
