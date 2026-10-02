@@ -63,6 +63,15 @@ class JobItem {
   final String requirements;
   final String contactEmail;
 
+  /// Link to the original posting, for vacancies imported from a job feed.
+  /// Empty for a vacancy a recruiter typed into the app.
+  final String applyUrl;
+
+  /// Where this vacancy came from: 'feed' for an imported one.
+  final String source;
+
+  bool get isImported => source == 'feed' && applyUrl.isNotEmpty;
+
   JobItem({
     required this.id,
     required this.title,
@@ -75,6 +84,8 @@ class JobItem {
     this.description = '',
     this.requirements = '',
     this.contactEmail = '',
+    this.applyUrl = '',
+    this.source = '',
   });
 }
 

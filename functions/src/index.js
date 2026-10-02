@@ -6,6 +6,7 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { repository, ValidationError } = require('./lost_found');
 const { backups } = require('./backup');
+const { jobFeed } = require('./job_feed');
 const { Storage } = require('@google-cloud/storage');
 initializeApp();
 const store = repository(getFirestore(), Timestamp);
@@ -67,5 +68,30 @@ exports.dailyFirestoreBackup = onSchedule(
     if (pruned.deleted.length) {
       console.log(`Pruned ${pruned.deleted.length} expired backup files`);
     }
+  },
+);
+
+// Imports vacancies from a published job feed every six hours.
+//
+// A feed, not a scraper: LinkedIn's robots.txt states that automated access
+// without their permission is strictly prohibited, and a scraper breaks the
+// moment a site changes its markup. Set JOB_FEED_URL to any RSS, Atom or JSON
+// feed you are permitted to use; with none set the import does nothing.
+const feed = jobFeed({ db: getFirestore() });
+
+exports.importJobFeed = onSchedule(
+  {
+    schedule: 'every 6 hours',
+    timeZone: 'Etc/UTC',
+    retryCount: 2,
+    timeoutSeconds: 300,
+  },
+  async () => {
+    const result = await feed.run();
+    console.log(
+      result.skipped
+        ? `Job feed import skipped: ${result.skipped}`
+        : `Imported ${result.imported} vacancies from the job feed`,
+    );
   },
 );

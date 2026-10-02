@@ -22,6 +22,8 @@ class JobService {
       description: (data['description'] ?? '').toString(),
       requirements: (data['requirements'] ?? '').toString(),
       contactEmail: (data['contactEmail'] ?? '').toString(),
+      applyUrl: (data['applyUrl'] ?? '').toString(),
+      source: (data['source'] ?? '').toString(),
     );
   }
 
