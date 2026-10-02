@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../core/utils/time_ago.dart';
@@ -62,10 +63,18 @@ class ActivityService {
 
   /// Merges the newest entries from each collection, newest first.
   ///
-  /// A collection that fails (offline, or rules deny it) is skipped rather
-  /// than failing the whole feed, so one broken source cannot empty the list.
-  static Future<List<ActivityEvent>> recent({int limit = 12}) async {
+  /// A collection that fails is skipped rather than failing the whole feed,
+  /// so one broken source cannot empty the list -- but the names of the
+  /// failed sources come back with the result. Swallowing them silently made
+  /// an unreadable feed look like an empty one: a student whose reads were
+  /// denied, or who was offline, was told "Nothing has happened yet", which
+  /// is a different thing entirely and gave them nothing to act on.
+  static Future<ActivityFeed> load({int limit = 12}) async {
+    if (Firebase.apps.isEmpty) {
+      return const ActivityFeed(events: [], unreadable: []);
+    }
     final events = <ActivityEvent>[];
+    final unreadable = <String>[];
 
     await Future.wait([
       for (final (collection, timeField, titleField, label, icon, route)
@@ -92,11 +101,32 @@ class ActivityService {
                   );
                 }
               },
-              onError: (_) {},
+              onError: (_) => unreadable.add(collection),
             ),
     ]);
 
     events.sort((a, b) => b.happenedAt.compareTo(a.happenedAt));
-    return events.take(limit).toList();
+    return ActivityFeed(
+      events: events.take(limit).toList(),
+      unreadable: unreadable,
+    );
   }
+
+  /// Just the events, for callers that only show the newest one.
+  static Future<List<ActivityEvent>> recent({int limit = 12}) async =>
+      (await load(limit: limit)).events;
+}
+
+/// The feed plus which sources could not be read.
+class ActivityFeed {
+  const ActivityFeed({required this.events, required this.unreadable});
+
+  final List<ActivityEvent> events;
+
+  /// Collections that failed to load, by name. Empty when everything read.
+  final List<String> unreadable;
+
+  /// True when there is nothing to show *and* a source failed, which means
+  /// "we could not look", not "nothing has happened".
+  bool get failedEntirely => events.isEmpty && unreadable.isNotEmpty;
 }

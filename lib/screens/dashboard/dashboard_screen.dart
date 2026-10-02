@@ -397,7 +397,7 @@ class DashboardRecentActivity extends StatefulWidget {
   const DashboardRecentActivity({super.key, this.loader});
 
   /// Injectable for tests; defaults to the live Firestore query.
-  final Future<List<ActivityEvent>> Function()? loader;
+  final Future<ActivityFeed> Function()? loader;
 
   @override
   State<DashboardRecentActivity> createState() =>
@@ -405,15 +405,21 @@ class DashboardRecentActivity extends StatefulWidget {
 }
 
 class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
-  late final Future<List<ActivityEvent>> _future =
-      (widget.loader ?? ActivityService.recent)();
+  late final Future<ActivityFeed> _future =
+      (widget.loader ?? ActivityService.load)();
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<List<ActivityEvent>>(
+  Widget build(BuildContext context) => FutureBuilder<ActivityFeed>(
     future: _future,
     builder: (context, snapshot) {
-      final events = snapshot.data ?? const <ActivityEvent>[];
+      final feed = snapshot.data;
+      final events = feed?.events ?? const <ActivityEvent>[];
       final latest = events.isEmpty ? null : events.first;
+      // "Nothing has happened yet" was shown whether the feed was empty or
+      // simply unreadable, which told a student the wrong thing when their
+      // reads were denied or they were offline.
+      final couldNotLook =
+          snapshot.hasError || (feed?.failedEntirely ?? false);
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -431,7 +437,10 @@ class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
         child: Row(
           children: [
             Icon(
-              latest?.icon ?? Icons.history_outlined,
+              latest?.icon ??
+                  (couldNotLook
+                      ? Icons.cloud_off_outlined
+                      : Icons.history_outlined),
               color: AppColors.primary,
               size: 26,
             ),
@@ -444,6 +453,8 @@ class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
                     latest?.title ??
                         (snapshot.connectionState == ConnectionState.waiting
                             ? 'Loading activity...'
+                            : couldNotLook
+                            ? 'Could not load activity'
                             : 'Nothing has happened yet'),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -455,9 +466,11 @@ class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    latest == null
-                        ? 'Upload a note or post an item to get started.'
-                        : timeAgo(latest.happenedAt),
+                    latest != null
+                        ? timeAgo(latest.happenedAt)
+                        : couldNotLook
+                        ? 'Tap to retry.'
+                        : 'Upload a note or post an item to get started.',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
