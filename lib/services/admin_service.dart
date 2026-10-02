@@ -96,6 +96,7 @@ class AdminService {
   static const productsCollection = 'products';
   static const notesCollection = 'notes';
   static const jobsCollection = 'jobs';
+  static const ticketsCollection = 'tickets';
 
   static bool get isAdmin => AuthService.isCurrentUserAdmin();
 
@@ -186,6 +187,31 @@ class AdminService {
               subtitle:
                   '${(data['company'] ?? 'Unknown')}  •  ${(data['location'] ?? '')}',
               ownerLabel: (data['type'] ?? '').toString(),
+            );
+          }).toList(),
+        );
+  }
+
+  /// Published event tickets, so an admin can pull one at any time.
+  static Stream<List<ModeratedItem>> watchTickets() {
+    _requireAdmin();
+    return _db
+        .collection(ticketsCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+            final price = (data['price'] ?? '').toString();
+            return ModeratedItem(
+              id: doc.id,
+              collection: ticketsCollection,
+              title: (data['title'] ?? 'Untitled event').toString(),
+              subtitle: [
+                (data['details'] ?? '').toString(),
+                if (price.isNotEmpty) price,
+              ].where((part) => part.isNotEmpty).join('  •  '),
+              ownerLabel: (data['postedBy'] ?? '').toString(),
             );
           }).toList(),
         );

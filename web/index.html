@@ -38,6 +38,24 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <div id="unix-loading" role="status" style="position:fixed;inset:0;display:grid;place-content:center;text-align:center;background:white;font:16px system-ui;color:#1e293b">
+    <strong style="font-size:28px;color:#002ddf">UNIX</strong>
+    <p id="unix-loading-message">Starting UNIX…</p>
+    <button id="unix-reload" hidden onclick="location.reload()" style="padding:12px 24px;border:0;border-radius:24px;background:#002ddf;color:white;cursor:pointer">Reload app</button>
+  </div>
+  <script>
+    const unixLoadingTimeout = setTimeout(() => {
+      const message = document.getElementById('unix-loading-message');
+      if (message) {
+        message.textContent = 'Still loading. Check that the local server is running.';
+        document.getElementById('unix-reload').hidden = false;
+      }
+    }, 45000);
+    window.addEventListener('flutter-first-frame', () => {
+      clearTimeout(unixLoadingTimeout);
+      document.getElementById('unix-loading')?.remove();
+    }, { once: true });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

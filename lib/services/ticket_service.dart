@@ -1,0 +1,138 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'auth_service.dart';
+
+/// One campus event students can get a ticket for.
+///
+/// Before this existed the Tickets screen showed two events written into the
+/// source code, so nobody could add an event and there was nothing for an
+/// admin to remove. Events now live in Firestore, which is what makes
+/// deleting one possible at all.
+class TicketEvent {
+  const TicketEvent({
+    required this.id,
+    required this.title,
+    required this.details,
+    required this.price,
+    required this.imageUrl,
+    this.postedBy = '',
+    this.createdAt,
+  });
+
+  final String id;
+  final String title;
+
+  /// Date and venue as one line, e.g. "Sep 18 - Main Auditorium".
+  final String details;
+
+  /// Shown as typed, so an admin can write "Free" as well as "LKR 750".
+  final String price;
+  final String imageUrl;
+  final String postedBy;
+  final DateTime? createdAt;
+
+  static TicketEvent fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    return TicketEvent(
+      id: doc.id,
+      title: (data['title'] ?? 'Untitled event').toString(),
+      details: (data['details'] ?? '').toString(),
+      price: (data['price'] ?? '').toString(),
+      imageUrl: (data['imageUrl'] ?? '').toString(),
+      postedBy: (data['postedBy'] ?? '').toString(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+    );
+  }
+}
+
+/// Reads and writes the campus events students buy tickets for.
+///
+/// Reading is open to any signed-in student; writing is admin-only. As
+/// everywhere else in this app the checks here are a convenience so the UI can
+/// fail fast with a readable message -- the real enforcement is in
+/// firestore.rules, because a client-side check alone can be bypassed.
+class TicketService {
+  static FirebaseFirestore get _db => FirebaseFirestore.instance;
+
+  static const collection = 'tickets';
+
+  /// Field limits, kept in step with the tickets rules in firestore.rules.
+  static const titleLimit = 150;
+  static const detailsLimit = 200;
+  static const priceLimit = 40;
+  static const imageUrlLimit = 500;
+
+  static void _requireAdmin() {
+    if (!AuthService.isCurrentUserAdmin()) {
+      throw StateError('Sign in with an approved admin account to do this.');
+    }
+  }
+
+  /// Rejects anything the rules would refuse, so a student sees a sentence
+  /// they can act on rather than a raw permission-denied error.
+  static String? validationError({
+    required String title,
+    required String details,
+    required String price,
+    required String imageUrl,
+  }) {
+    if (title.trim().isEmpty) return 'Give the event a title.';
+    if (title.trim().length > titleLimit) {
+      return 'Keep the title under $titleLimit characters.';
+    }
+    if (details.trim().length > detailsLimit) {
+      return 'Keep the date and venue under $detailsLimit characters.';
+    }
+    if (price.trim().length > priceLimit) {
+      return 'Keep the price under $priceLimit characters.';
+    }
+    if (imageUrl.trim().length > imageUrlLimit) {
+      return 'That image link is too long.';
+    }
+    final link = imageUrl.trim();
+    if (link.isNotEmpty && !link.startsWith('https://')) {
+      return 'An image link must start with https://';
+    }
+    return null;
+  }
+
+  /// Every published event, newest first.
+  static Stream<List<TicketEvent>> watch() => _db
+      .collection(collection)
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map(TicketEvent.fromDoc).toList());
+
+  /// Publishes an event. Admins only.
+  static Future<void> create({
+    required String title,
+    required String details,
+    required String price,
+    required String imageUrl,
+  }) async {
+    _requireAdmin();
+    final problem = validationError(
+      title: title,
+      details: details,
+      price: price,
+      imageUrl: imageUrl,
+    );
+    if (problem != null) throw StateError(problem);
+    await _db.collection(collection).add({
+      'title': title.trim(),
+      'details': details.trim(),
+      'price': price.trim(),
+      'imageUrl': imageUrl.trim(),
+      'postedBy': FirebaseAuth.instance.currentUser?.email ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Removes an event. Admins only, and allowed at any time -- there is no
+  /// window after which an event becomes undeletable.
+  static Future<void> remove(String id) async {
+    _requireAdmin();
+    await _db.collection(collection).doc(id).delete();
+  }
+}

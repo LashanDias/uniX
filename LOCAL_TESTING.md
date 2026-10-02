@@ -28,7 +28,7 @@ In a second terminal:
 Copy-Item .env.example .env
 
 node scripts/seed_local_users.mjs
-flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5175 --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=LOCAL_CAREER_AI=true
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5175 --no-web-resources-cdn --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=LOCAL_CAREER_AI=true
 ```
 
 Enter the email/password from `.env` on the normal login form. The seeder verifies both password logins and stored profile roles. It only contacts fixed localhost emulator endpoints; it never creates production accounts or prints auth tokens/passwords.
@@ -41,7 +41,7 @@ Google, Apple and LinkedIn are separate social sign-in flows. Use the email/pass
 
 ## CV analysis and local career requests
 
-Open http://localhost:5175 in your browser and choose the Jobs tab. The web-server device avoids requiring a Chrome debugger connection.
+Open http://localhost:5175 in your browser and choose the Jobs tab. The web-server device avoids requiring a Chrome debugger connection. `--no-web-resources-cdn` serves Flutter's graphics engine from the installed SDK rather than downloading it at startup. Firebase's web SDK still needs network access on its first load.
 
 The four steps are Upload CV → Review extracted information → Skill match → Ranked jobs. PDF, DOCX and TXT are supported; scanned PDFs need pasted text. The sample CV button lets you test immediately. Four clearly labelled sample HR requirements are added once without replacing existing requirements. HR documents saved from the existing recruiter workspace are also available to the student on the same browser/origin. Sample applications are never submitted.
 

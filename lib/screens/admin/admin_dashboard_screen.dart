@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/admin_service.dart';
 import '../../services/app_access_service.dart';
+import '../../services/ticket_service.dart';
 import '../../widgets/app_back_button.dart';
 
 /// Admin control panel: live platform stats, user management and moderation.
@@ -513,12 +514,14 @@ class _ModerationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 3,
+    length: 4,
     child: Column(
       children: [
         const Material(
           color: AppColors.background,
           child: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
@@ -526,6 +529,7 @@ class _ModerationTab extends StatelessWidget {
               Tab(text: 'Items'),
               Tab(text: 'Notes'),
               Tab(text: 'Jobs'),
+              Tab(text: 'Tickets'),
             ],
           ),
         ),
@@ -547,6 +551,7 @@ class _ModerationTab extends StatelessWidget {
                 emptyText: 'No vacancies posted yet.',
                 icon: Icons.work_outline,
               ),
+              const _TicketsModeration(),
             ],
           ),
         ),
@@ -555,16 +560,185 @@ class _ModerationTab extends StatelessWidget {
   );
 }
 
+/// Publish and remove campus event tickets.
+///
+/// Delete sits on the same list as every other moderated collection, and the
+/// rules put no window on it: an event can be pulled at any time, including
+/// after its date has passed. Publishing lives here too, because before this
+/// the two events on the Tickets screen were written into the source code and
+/// there was nothing an admin could remove.
+class _TicketsModeration extends StatelessWidget {
+  const _TicketsModeration();
+
+  Future<void> _addEvent(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _AddTicketDialog(),
+    );
+    if (created != true) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Event published to the Tickets screen.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => _ModerationList(
+    stream: AdminService.watchTickets,
+    emptyText: 'No events published yet. Add one to get started.',
+    icon: Icons.confirmation_number_outlined,
+    header: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: () => _addEvent(context),
+          icon: const Icon(Icons.add, size: 18),
+          label: const Text('Add event'),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The form for publishing one event.
+class _AddTicketDialog extends StatefulWidget {
+  const _AddTicketDialog();
+
+  @override
+  State<_AddTicketDialog> createState() => _AddTicketDialogState();
+}
+
+class _AddTicketDialogState extends State<_AddTicketDialog> {
+  final _title = TextEditingController();
+  final _details = TextEditingController();
+  final _price = TextEditingController();
+  final _imageUrl = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _details.dispose();
+    _price.dispose();
+    _imageUrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    // Checked here as well as in the rules so a typo comes back as a sentence
+    // rather than a raw permission-denied error.
+    final problem = TicketService.validationError(
+      title: _title.text,
+      details: _details.text,
+      price: _price.text,
+      imageUrl: _imageUrl.text,
+    );
+    if (problem != null) {
+      setState(() => _error = problem);
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await TicketService.create(
+        title: _title.text,
+        details: _details.text,
+        price: _price.text,
+        imageUrl: _imageUrl.text,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is StateError
+              ? error.message.toString()
+              : 'Could not publish this event. Please retry.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Add an event'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _title,
+            decoration: const InputDecoration(
+              labelText: 'Event name',
+              hintText: 'Talent Night 2026',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _details,
+            decoration: const InputDecoration(
+              labelText: 'Date and venue',
+              hintText: 'Sep 18 • Main Auditorium',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _price,
+            decoration: const InputDecoration(
+              labelText: 'Price',
+              hintText: 'LKR 750, or Free',
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _imageUrl,
+            decoration: const InputDecoration(
+              labelText: 'Image link (optional)',
+              hintText: 'https://...',
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: const TextStyle(color: AppColors.error, fontSize: 12),
+            ),
+          ],
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: _busy ? null : () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(
+        onPressed: _busy ? null : _save,
+        child: Text(_busy ? 'Publishing...' : 'Publish'),
+      ),
+    ],
+  );
+}
+
 class _ModerationList extends StatelessWidget {
   const _ModerationList({
     required this.stream,
     required this.emptyText,
     required this.icon,
+    this.header,
   });
 
   final Stream<List<ModeratedItem>> Function() stream;
   final String emptyText;
   final IconData icon;
+
+  /// Pinned above the list, for a tab that can also add rows.
+  final Widget? header;
 
   Future<void> _confirmDelete(BuildContext context, ModeratedItem item) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -603,30 +777,37 @@ class _ModerationList extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<List<ModeratedItem>>(
-    stream: stream(),
-    builder: (context, snapshot) {
-      if (snapshot.hasError) {
-        return const _TabMessage(
-          icon: Icons.cloud_off_outlined,
-          text: 'Could not load this list. Check your connection.',
-        );
-      }
-      if (!snapshot.hasData) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      final items = snapshot.data!;
-      if (items.isEmpty) return _TabMessage(icon: icon, text: emptyText);
-      return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        itemCount: items.length,
-        itemBuilder: (context, index) => _ModerationRow(
-          item: items[index],
-          icon: icon,
-          onDelete: _confirmDelete,
+  Widget build(BuildContext context) => Column(
+    children: [
+      ?header,
+      Expanded(
+        child: StreamBuilder<List<ModeratedItem>>(
+          stream: stream(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const _TabMessage(
+                icon: Icons.cloud_off_outlined,
+                text: 'Could not load this list. Check your connection.',
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final items = snapshot.data!;
+            if (items.isEmpty) return _TabMessage(icon: icon, text: emptyText);
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              itemCount: items.length,
+              itemBuilder: (context, index) => _ModerationRow(
+                item: items[index],
+                icon: icon,
+                onDelete: _confirmDelete,
+              ),
+            );
+          },
         ),
-      );
-    },
+      ),
+    ],
   );
 }
 

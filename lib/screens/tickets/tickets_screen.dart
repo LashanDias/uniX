@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../services/ticket_service.dart';
 import '../../widgets/safe_network_image.dart';
 
 class TicketsScreen extends StatefulWidget {
@@ -34,22 +35,46 @@ class _TicketsScreenState extends State<TicketsScreen> {
           else ...[
             _secureBanner(),
             const SizedBox(height: 16),
-            _eventCard(
-              'Talent Night 2026 - Early Bird Access',
-              'Sep 18 • Main Auditorium',
-              'LKR 750',
-              // A concert stage, so the card reads as a music event at a
-              // glance rather than as another block of text.
-              'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3'
-                  '?auto=format&fit=crop&w=900&q=80',
-            ),
-            const SizedBox(height: 14),
-            _eventCard(
-              'Tech Expo & Career Fair',
-              'Sep 23 • Innovation Centre',
-              'Free',
-              'https://images.unsplash.com/photo-1540575467063-178a50c2df87'
-                  '?auto=format&fit=crop&w=900&q=80',
+            // The two events here used to be written into this file, so no
+            // admin could add one and none could ever be removed. They now
+            // come from Firestore, which is what lets an admin pull an event
+            // at any time from the Tickets tab of the admin panel.
+            StreamBuilder<List<TicketEvent>>(
+              stream: TicketService.watch(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const _TicketsMessage(
+                    icon: Icons.cloud_off_outlined,
+                    text: 'Could not load events. Check your connection.',
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                final events = snapshot.data!;
+                if (events.isEmpty) {
+                  return const _TicketsMessage(
+                    icon: Icons.confirmation_number_outlined,
+                    text: 'No events on sale right now. Check back soon.',
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final event in events) ...[
+                      _eventCard(
+                        event.title,
+                        event.details,
+                        event.price,
+                        event.imageUrl,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  ],
+                );
+              },
             ),
           ],
         ],
@@ -168,6 +193,30 @@ class _TicketsScreenState extends State<TicketsScreen> {
         Icon(Icons.qr_code_2, color: Colors.white, size: 180),
         SizedBox(height: 12),
         Text('Scan QR to Enter', style: TextStyle(color: Colors.white70)),
+      ],
+    ),
+  );
+}
+
+/// A centred icon and line, for the empty and error states.
+class _TicketsMessage extends StatelessWidget {
+  const _TicketsMessage({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 44, horizontal: 20),
+    child: Column(
+      children: [
+        Icon(icon, size: 44, color: AppColors.textLight),
+        const SizedBox(height: 12),
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
       ],
     ),
   );
