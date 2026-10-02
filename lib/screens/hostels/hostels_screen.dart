@@ -165,52 +165,18 @@ class _GenderChoiceBody extends StatelessWidget {
     ],
   );
 
+  /// Opens the boarding list, filtered to annexes when that card was tapped.
+  ///
+  /// Both cards reach real listings now, so the "coming soon" placeholder that
+  /// used to sit here was unreachable -- and its comment said Annex Houses had
+  /// no listings, which stopped being true once the annex category landed.
   void _openAccommodation(BuildContext context, String type) {
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        // Boarding has real listings now; Annex Houses does not yet.
-        builder: (_) => type == 'Boarding'
-            ? const BoardingScreen()
-            : type == 'Annex Houses'
+        builder: (_) => type == 'Annex Houses'
             ? const BoardingScreen(category: BoardingCategory.annex)
-            : Scaffold(
-                appBar: AppBar(
-                  leading: const AppBackButton(),
-                  title: Text(type),
-                ),
-                body: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          type == 'Boarding'
-                              ? Icons.bed_outlined
-                              : Icons.house_outlined,
-                          size: 56,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '$type listings coming soon',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No listings have been added yet.',
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            : const BoardingScreen(),
       ),
     );
   }

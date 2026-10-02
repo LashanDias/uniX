@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
@@ -210,40 +210,21 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                       // ListTile, so a student's own report does not look
                       // like a lesser thing than the samples.
                       return InkWell(
+                        // Opens the same page the sample items use. It used to
+                        // open a bare, unstyled list of the raw fields, which
+                        // made a student's own report look like a lesser thing
+                        // than the samples sitting right below it.
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute<void>(
-                            builder: (_) => Scaffold(
-                              appBar: AppBar(
-                                title: Text(report['title'] as String),
-                              ),
-                              body: SingleChildScrollView(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Wrap(
-                                      spacing: 12,
-                                      runSpacing: 12,
-                                      children: [
-                                        for (final photo in images)
-                                          Image.memory(
-                                            base64Decode(photo),
-                                            width: 190,
-                                            height: 190,
-                                            fit: BoxFit.cover,
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Text(report['location'] as String),
-                                    Text(report['description'] as String),
-                                    const Text(
-                                      'Local draft - no automatic follow-ups',
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            builder: (_) => LostItemDetailScreen(
+                              title: report['title'] as String,
+                              description: report['description'] as String,
+                              location: report['location'] as String,
+                              date: 'Saved on this device',
+                              type: (report['type'] as String?) ?? 'lost',
+                              photos: images,
+                              isMine: true,
                             ),
                           ),
                         ),
@@ -465,15 +446,88 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
   );
 }
 
+/// The full page for one Lost & Found item.
+///
+/// This used to take nothing but a title and invent the rest: every item,
+/// whatever it was, claimed it had been lost "near library" on "May 2nd 2026".
+/// A student's own report could not use it at all and opened a bare,
+/// unstyled page instead. It now carries the real report, so a report you
+/// just filed looks exactly like the samples beside it.
 class LostItemDetailScreen extends StatelessWidget {
-  const LostItemDetailScreen({super.key, required this.title});
+  const LostItemDetailScreen({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.location,
+    required this.date,
+    required this.type,
+    this.photos = const [],
+    this.imageAsset,
+    this.isMine = false,
+  });
+
+  /// One of the built-in sample items on the list.
+  ///
+  /// The wording says plainly that it is a sample, so nobody waits for a
+  /// reply to a report that no student ever filed.
+  LostItemDetailScreen.example({super.key, required this.title})
+    : description = 'Sample report, so you can see how a real one looks.',
+      location = 'Library second floor',
+      date = 'Example item',
+      type = 'lost',
+      photos = const [],
+      isMine = false,
+      imageAsset = switch (title.toLowerCase()) {
+        'black wallet' => 'assets/images/lost_wallet.png',
+        'keys' => 'assets/images/lost_keys.png',
+        'id card' => 'assets/images/lost_student_card.png',
+        _ => 'assets/images/earbuds.jfif',
+      };
+
   final String title;
-  String get imageAsset => switch (title.toLowerCase()) {
-    'black wallet' => 'assets/images/lost_wallet.png',
-    'keys' => 'assets/images/lost_keys.png',
-    'id card' => 'assets/images/lost_student_card.png',
-    _ => 'assets/images/earbuds.jfif',
-  };
+  final String description;
+  final String location;
+  final String date;
+  final String type;
+
+  /// Photos the student attached, base64 encoded as they are stored.
+  final List<String> photos;
+
+  /// Stand-in artwork, used only by the sample items.
+  final String? imageAsset;
+
+  /// Whether the signed-in student filed this report.
+  final bool isMine;
+
+  bool get _isExample => imageAsset != null;
+
+  /// Copies the report so it can be pasted into a batch or hostel group.
+  ///
+  /// A report stores no phone number or email -- only the reporter's user id
+  /// -- so there is nothing to dial, and the old "Contact owner" button went
+  /// to the follow-ups page instead, which contacted nobody. Sharing the
+  /// details is the thing that can actually be done with what is stored.
+  Future<void> _copy(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final text = '''
+${type == 'found' ? 'Found' : 'Lost'}: $title
+Where: $location
+When: $date
+
+$description'''
+        .trim();
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Details copied. Paste them anywhere.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Clipboard unavailable on this device.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.white,
@@ -493,24 +547,90 @@ class LostItemDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  imageAsset,
-                  fit: BoxFit.cover,
-                  semanticLabel: 'Example image of $title',
-                ),
+                child: photos.isNotEmpty
+                    ? Image.memory(
+                        base64Decode(photos.first),
+                        fit: BoxFit.cover,
+                        semanticLabel: 'Photo of $title',
+                      )
+                    : imageAsset != null
+                    ? Image.asset(
+                        imageAsset!,
+                        fit: BoxFit.cover,
+                        semanticLabel: 'Example image of $title',
+                      )
+                    : const Icon(
+                        Icons.image_outlined,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
               ),
             ),
             const SizedBox(height: 16),
-            const Center(
+            Center(
               child: Text(
-                'Example item image',
-                style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                _isExample
+                    ? 'Example item image'
+                    : photos.isEmpty
+                    ? 'No photo attached'
+                    : 'Photo you attached',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textLight,
+                ),
               ),
             ),
+            if (photos.length > 1) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final photo in photos.skip(1))
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.memory(
+                        base64Decode(photo),
+                        width: 84,
+                        height: 84,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 14),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (isMine)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Yours',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 28),
             const Text(
@@ -519,7 +639,7 @@ class LostItemDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Lost my ${title.toLowerCase()} near library',
+              description.isEmpty ? 'No description given.' : description,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 14),
@@ -528,21 +648,36 @@ class LostItemDetailScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Library second floor',
-              style: TextStyle(color: AppColors.textSecondary),
+            Text(
+              location.isEmpty ? 'Not given.' : location,
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 14),
             const Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            const Text(
-              'May 2nd 2026',
-              style: TextStyle(color: AppColors.textSecondary),
+            Text(
+              date,
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/find_item'),
-              child: const Text('Contact owner'),
+            ElevatedButton.icon(
+              onPressed: () => _copy(context),
+              icon: const Icon(Icons.copy_all_outlined, size: 18),
+              label: const Text('Copy details to share'),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              isMine
+                  ? 'This is your own report, so there is nobody to contact. '
+                        'Share the details in your batch group to spread it.'
+                  : 'Reports do not store a phone number or email, so the app '
+                        'cannot put you through to the owner. Copy the details '
+                        'and share them in your batch or hostel group.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textLight,
+                height: 1.4,
+              ),
             ),
           ],
         ),

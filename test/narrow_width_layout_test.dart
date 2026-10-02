@@ -29,7 +29,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       await tester.pumpWidget(
-        const MaterialApp(home: LostItemDetailScreen(title: 'Black wallet')),
+        MaterialApp(home: LostItemDetailScreen.example(title: 'Black wallet')),
       );
       await tester.pumpAndSettle();
 
@@ -54,7 +54,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const MaterialApp(home: LostItemDetailScreen(title: 'Black wallet')),
+      MaterialApp(home: LostItemDetailScreen.example(title: 'Black wallet')),
     );
     await tester.pumpAndSettle();
 
@@ -65,7 +65,7 @@ void main() {
     expect(find.text('Location'), findsOneWidget);
     expect(find.text('Date'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Contact owner'));
+    await tester.ensureVisible(find.text('Copy details to share'));
     expect(tester.takeException(), isNull);
   });
 }

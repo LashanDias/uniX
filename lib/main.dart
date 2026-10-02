@@ -138,7 +138,8 @@ class UnixApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const LostFoundScreen());
           case '/lost_item_detail':
             return MaterialPageRoute(
-              builder: (_) => LostItemDetailScreen(
+              // This route only ever shows the built-in sample items.
+              builder: (_) => LostItemDetailScreen.example(
                 title: settings.arguments as String? ?? 'Black wallet',
               ),
             );
