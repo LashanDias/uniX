@@ -63,7 +63,7 @@ class TopJobsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Explore vacancies posted\nby recruiters',
+                        'Browse current vacancies\nfrom recruiters and ITPro.lk',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -95,7 +95,9 @@ class TopJobsScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.data!.isEmpty) {
-                return const Text('No vacancies have been posted yet.');
+                return const Text(
+                  'No current vacancies yet. New ITPro.lk listings sync every six hours.',
+                );
               }
               return Column(
                 children: [

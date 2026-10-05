@@ -75,8 +75,8 @@ exports.dailyFirestoreBackup = onSchedule(
 //
 // A feed, not a scraper: LinkedIn's robots.txt states that automated access
 // without their permission is strictly prohibited, and a scraper breaks the
-// moment a site changes its markup. Set JOB_FEED_URL to any RSS, Atom or JSON
-// feed you are permitted to use; with none set the import does nothing.
+// moment a site changes its markup. The default is ITPro.lk's published
+// all-jobs RSS feed; JOB_FEED_URL can replace it with another permitted feed.
 const feed = jobFeed({ db: getFirestore() });
 
 exports.importJobFeed = onSchedule(

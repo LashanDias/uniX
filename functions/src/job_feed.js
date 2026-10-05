@@ -10,13 +10,14 @@
  * strictly prohibited, and a scraper also breaks the moment the site's markup
  * changes.
  *
- * Point JOB_FEED_URL at any RSS, Atom or JSON feed you are permitted to use:
- * a university careers feed, a partner board's API, or a file you publish
- * yourself. With no URL set the import does nothing.
+ * By default, use ITPro.lk's published all-jobs RSS feed. It is intended for
+ * integrations and provides current Sri Lankan IT vacancies. Set JOB_FEED_URL
+ * to another permitted RSS, Atom or JSON feed to replace it.
  */
 
 /** Vacancies to keep from one run, so a huge feed cannot flood the board. */
 const MAX_ITEMS = 50;
+const DEFAULT_JOB_FEED_URL = 'https://itpro.lk/rss/all/';
 
 /** Field limits, matching the jobs rules in firestore.rules. */
 const LIMITS = { title: 200, company: 200, location: 200, description: 5000 };
@@ -70,6 +71,12 @@ function jobType(text) {
 function parseXmlFeed(xml) {
   const blocks = xml.match(/<(item|entry)[\s>][\s\S]*?<\/(item|entry)>/gi) ?? [];
   return blocks.map((block) => {
+    const rawTitle = clean(tag(block, 'title'), LIMITS.title);
+    const titleWithCompany = rawTitle.match(/^(.+?)\s+at\s+(.+?)(?:\s+-\s+.+)?$/i);
+    const publishedCompany = clean(
+      tag(block, 'author') || tag(block, 'dc:creator') || tag(block, 'source'),
+      LIMITS.company,
+    );
     const link =
       clean(tag(block, 'link'), 500) ||
       (block.match(/<link[^>]*href="([^"]+)"/i)?.[1] ?? '');
@@ -78,11 +85,8 @@ function parseXmlFeed(xml) {
       LIMITS.description,
     );
     return {
-      title: clean(tag(block, 'title'), LIMITS.title),
-      company: clean(
-        tag(block, 'author') || tag(block, 'dc:creator') || tag(block, 'source'),
-        LIMITS.company,
-      ),
+      title: clean(titleWithCompany?.[1] ?? rawTitle, LIMITS.title),
+      company: publishedCompany || clean(titleWithCompany?.[2] ?? '', LIMITS.company),
       location: clean(tag(block, 'category'), LIMITS.location),
       description,
       url: clean(link, 500),
@@ -154,7 +158,11 @@ function parseFeed(body, contentType = '') {
  * @param {Function} [deps.fetchFn] injectable for tests
  * @param {string} [deps.feedUrl]
  */
-function jobFeed({ db, fetchFn = fetch, feedUrl = process.env.JOB_FEED_URL }) {
+function jobFeed({
+  db,
+  fetchFn = fetch,
+  feedUrl = process.env.JOB_FEED_URL || DEFAULT_JOB_FEED_URL,
+}) {
   return {
     parseFeed,
     documentId,
@@ -216,4 +224,5 @@ module.exports = {
   jobType,
   clean,
   MAX_ITEMS,
+  DEFAULT_JOB_FEED_URL,
 };

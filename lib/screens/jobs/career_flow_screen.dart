@@ -405,7 +405,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
     _button('Analyse my CV', _analyse),
     _title('HR job requirements'),
     Text(
-      '${_jobs.length} requirements saved on this device. Sample jobs are examples, not live vacancies.',
+      '${_jobs.length} requirements saved on this device. Use these to test CV matching, or browse current vacancies.',
     ),
     Wrap(
       spacing: 8,
@@ -435,7 +435,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
           ),
         ),
       ),
-      child: const Text('Browse published vacancies'),
+      child: const Text('Browse live vacancies'),
     ),
   ];
 

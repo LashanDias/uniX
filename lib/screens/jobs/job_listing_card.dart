@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/app_models.dart';
 
 class JobListingCard extends StatelessWidget {
@@ -16,6 +17,19 @@ class JobListingCard extends StatelessWidget {
           Text(job.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
           Text(job.company),
+          if (job.isImported) ...[
+            const SizedBox(height: 6),
+            const Row(
+              children: [
+                Icon(Icons.public, size: 14, color: Colors.green),
+                SizedBox(width: 5),
+                Text(
+                  'Live from ITPro.lk',
+                  style: TextStyle(color: Colors.green, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 8),
           Text('${job.type} • ${job.location}'),
           if (job.requirements.isNotEmpty) ...[
@@ -31,6 +45,13 @@ class JobListingCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
+          if (job.isImported)
+            OutlinedButton.icon(
+              onPressed: () => _openApplication(context),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Apply on ITPro.lk'),
+            )
+          else
           OutlinedButton(
             onPressed: () => Navigator.push(
               context,
@@ -94,4 +115,14 @@ class JobListingCard extends StatelessWidget {
       ),
     ),
   );
+
+  Future<void> _openApplication(BuildContext context) async {
+    final uri = Uri.tryParse(job.applyUrl);
+    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the original vacancy.')),
+      );
+    }
+  }
 }
