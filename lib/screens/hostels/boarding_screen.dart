@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../services/boarding_store.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/app_back_button.dart';
 
 /// Boarding places near campus, with the ones students add themselves.
@@ -147,6 +149,8 @@ class _BoardingScreenState extends State<BoardingScreen> {
   @override
   Widget build(BuildContext context) {
     final visible = _places.where((place) => place.matches(_query)).toList();
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isAdmin = AuthService.isCurrentUserAdmin();
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -240,10 +244,16 @@ class _BoardingScreenState extends State<BoardingScreen> {
                             place: place,
                             onMap: () => _openMap(place),
                             onCall: () => _call(place),
-                            onEdit: place.custom
+                            onEdit: place.custom &&
+                                    (isAdmin ||
+                                        (currentUserId != null &&
+                                            currentUserId == place.ownerId))
                                 ? () => _openForm(existing: place)
                                 : null,
-                            onRemove: place.custom
+                            onRemove: place.custom &&
+                                    (isAdmin ||
+                                        (currentUserId != null &&
+                                            currentUserId == place.ownerId))
                                 ? () => _remove(place)
                                 : null,
                           ),
@@ -482,6 +492,7 @@ class _BoardingFormScreenState extends State<BoardingFormScreen> {
             note: _note.text.trim(),
             category: widget.category,
             custom: true,
+            ownerId: FirebaseAuth.instance.currentUser?.uid,
           ),
         );
       }

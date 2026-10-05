@@ -19,6 +19,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   void dispose() {
@@ -173,12 +175,19 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_showPassword,
                     decoration: InputDecoration(
                       hintText: 'Password',
-                      suffixIcon: const Icon(
-                        Icons.visibility_off_outlined,
-                        size: 20,
+                      suffixIcon: IconButton(
+                        tooltip: _showPassword ? 'Hide password' : 'Show password',
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -186,12 +195,22 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   TextField(
                     controller: _confirmPasswordController,
-                    obscureText: true,
+                    obscureText: !_showConfirmPassword,
                     decoration: InputDecoration(
                       hintText: 'Confirm Password',
-                      suffixIcon: const Icon(
-                        Icons.visibility_off_outlined,
-                        size: 20,
+                      suffixIcon: IconButton(
+                        tooltip: _showConfirmPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                        onPressed: () => setState(
+                          () => _showConfirmPassword = !_showConfirmPassword,
+                        ),
+                        icon: Icon(
+                          _showConfirmPassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),

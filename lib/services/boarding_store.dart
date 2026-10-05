@@ -28,6 +28,7 @@ class BoardingPlace {
     this.phone = '',
     this.monthlyPrice,
     this.custom = false,
+    this.ownerId,
   });
 
   final String id;
@@ -55,6 +56,9 @@ class BoardingPlace {
 
   /// True for places a student added, which can be edited or removed.
   final bool custom;
+
+  /// Firebase account that submitted a user-created listing.
+  final String? ownerId;
 
   /// Walking distance, shown the way a map app would.
   String get distanceLabel => distanceKm < 1
@@ -92,6 +96,7 @@ class BoardingPlace {
     String? phone,
     int? monthlyPrice,
     String? note,
+    String? ownerId,
   }) => BoardingPlace(
     id: id,
     name: name ?? this.name,
@@ -105,6 +110,7 @@ class BoardingPlace {
     phone: phone ?? this.phone,
     monthlyPrice: monthlyPrice ?? this.monthlyPrice,
     custom: custom,
+    ownerId: ownerId ?? this.ownerId,
   );
 
   Map<String, dynamic> toJson() => {
@@ -119,6 +125,7 @@ class BoardingPlace {
     'note': note,
     'phone': phone,
     'monthlyPrice': monthlyPrice,
+    'ownerId': ownerId,
   };
 
   factory BoardingPlace.fromJson(Map<String, dynamic> json) => BoardingPlace(
@@ -137,6 +144,7 @@ class BoardingPlace {
     phone: (json['phone'] ?? '') as String,
     monthlyPrice: (json['monthlyPrice'] as num?)?.toInt(),
     custom: true,
+    ownerId: json['ownerId'] as String?,
   );
 }
 

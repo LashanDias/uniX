@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/app_check_service.dart';
 import 'services/local_firebase.dart';
 import 'services/auth_service.dart';
+import 'services/cv_matcher.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'models/app_models.dart';
@@ -42,6 +44,7 @@ import 'screens/marketplace/rental_flow_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) await initializeCvMatcher();
   await Firebase.initializeApp(
     options: LocalFirebase.enabled
         ? LocalFirebase.options

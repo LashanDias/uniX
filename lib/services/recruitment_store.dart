@@ -75,6 +75,23 @@ class RecruitmentStore {
     }
   }
 
+  Future<void> removeRequirements(String id, String accountId) async {
+    final entries = await requirements();
+    final selected = entries.where((entry) => entry['id'] == id).firstOrNull;
+    if (selected == null) return;
+    if (selected['ownerId'] != accountId && selected['sample'] != true) {
+      throw StateError('Only the author can remove these requirements.');
+    }
+    entries.removeWhere((entry) => entry['id'] == id);
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setString(
+      'recruitment.requirements.v1',
+      jsonEncode(entries),
+    )) {
+      throw StateError('Could not remove the requirements.');
+    }
+  }
+
   Map<String, dynamic> _decode(String? raw) =>
       raw == null ? {} : Map<String, dynamic>.from(jsonDecode(raw) as Map);
 }

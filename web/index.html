@@ -44,6 +44,14 @@
     <button id="unix-reload" hidden onclick="location.reload()" style="padding:12px 24px;border:0;border-radius:24px;background:#002ddf;color:white;cursor:pointer">Reload app</button>
   </div>
   <script>
+    window.cvMatcherReady = import('./cv-matcher.js').then((matcher) => {
+      window.matchCVJson = (cvText, requirementsJson) => JSON.stringify(
+        matcher.matchCV(cvText, JSON.parse(requirementsJson)),
+      );
+      window.addCvConceptJson = (name, wordsJson) =>
+        matcher.addConcept(name, JSON.parse(wordsJson));
+    });
+
     const unixLoadingTimeout = setTimeout(() => {
       const message = document.getElementById('unix-loading-message');
       if (message) {

@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/career_analysis.dart';
+import '../../services/cv_matcher.dart';
 import '../../services/recruitment_documents.dart';
 import '../../services/recruitment_store.dart';
 import '../../services/local_career_ai.dart';
@@ -27,10 +31,14 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
   final _scroll = ScrollController(keepScrollOffset: false);
   List<Map<String, dynamic>> _jobs = [];
   List<CareerMatch> _matches = [];
+  Map<String, dynamic> _semanticMatch = const {'total': 0, 'items': []};
   CareerProfile? _profile;
   String _name = '', _filter = 'All', _sort = 'Best match';
   String? _selectedId, _error;
   int _step = 0;
+  int _semanticRevision = 0;
+  Timer? _semanticDebounce;
+  bool _showSemanticMatch = false;
   bool _busy = true;
 
   @override
@@ -41,6 +49,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
 
   @override
   void dispose() {
+    _semanticDebounce?.cancel();
     _text.dispose();
     _scroll.dispose();
     super.dispose();
@@ -57,6 +66,9 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
         _name = '${cv['name'] ?? ''}';
         _jobs = jobs;
       });
+      if (_text.text.trim().isNotEmpty) {
+        unawaited(_refreshSemanticMatch());
+      }
     } catch (_) {
       if (mounted) {
         setState(
@@ -88,6 +100,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
         _profile = null;
         _matches = [];
       });
+      _scheduleSemanticMatch();
     } catch (e) {
       if (mounted) setState(() => _error = 'Could not read document: $e');
     } finally {
@@ -121,6 +134,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
         _jobs = jobs;
         _recalculate();
       });
+      await _refreshSemanticMatch();
       _go(1);
     } catch (e) {
       if (mounted) setState(() => _error = 'Analysis could not finish: $e');
@@ -150,6 +164,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
         _jobs = jobs;
         _recalculate();
       });
+      await _refreshSemanticMatch();
     } catch (e) {
       if (mounted) {
         setState(() => _error = 'Could not add sample requirements: $e');
@@ -177,6 +192,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
           _jobs = jobs;
           _recalculate();
         });
+        await _refreshSemanticMatch();
       }
     } catch (_) {
       if (mounted) {
@@ -190,6 +206,135 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
 
   CareerMatch? get _selected =>
       _matches.where((m) => m.id == _selectedId).firstOrNull;
+
+  void _scheduleSemanticMatch() {
+    if (!kIsWeb) return;
+    _semanticDebounce?.cancel();
+    _semanticDebounce = Timer(
+      const Duration(milliseconds: 120),
+      () => unawaited(_refreshSemanticMatch()),
+    );
+  }
+
+  Future<void> _refreshSemanticMatch() async {
+    if (!kIsWeb) return;
+    _semanticDebounce?.cancel();
+    final revision = ++_semanticRevision;
+    final requirements = _jobs
+        .map(
+          (job) => <String, dynamic>{
+            'title': '${job['title'] ?? ''}',
+            'text': '${job['text'] ?? ''}',
+          },
+        )
+        .toList();
+    try {
+      final result = await matchCV(_text.text, requirements);
+      if (!mounted || revision != _semanticRevision) return;
+      setState(() {
+        _semanticMatch = result;
+        _showSemanticMatch = true;
+      });
+    } catch (_) {
+      // A local matching error should not prevent CV review.
+    }
+  }
+
+  Widget _semanticMatchCard() {
+    if (!kIsWeb || !_showSemanticMatch || _jobs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final items = (_semanticMatch['items'] as List? ?? const []).cast<Map>();
+    final total = (_semanticMatch['total'] as num?)?.toInt() ?? 0;
+    return _card(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Live CV match',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Text(
+                '$total% overall',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Average match across saved HR requirements. Scores describe CV evidence, not hiring odds.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          for (
+            var index = 0;
+            index < items.length && index < _jobs.length;
+            index++
+          )
+            _requirementMatchRow(_jobs[index], items[index]),
+        ],
+      ),
+      color: const Color(0xFFF8F9FF),
+    );
+  }
+
+  Widget _requirementMatchRow(
+    Map<String, dynamic> job,
+    Map<dynamic, dynamic> item,
+  ) {
+    final score = (item['score'] as num?)?.toInt() ?? 0;
+    final label = '${item['label'] ?? 'Gap'}';
+    final evidence = '${item['evidence'] ?? ''}';
+    final color = switch (label) {
+      'Strong' => AppColors.success,
+      'Partial' => const Color(0xFFB26A00),
+      _ => AppColors.error,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${job['title'] ?? 'HR requirement'}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text('$score% · $label', style: TextStyle(color: color)),
+            ],
+          ),
+          const SizedBox(height: 5),
+          LinearProgressIndicator(
+            value: score / 100,
+            color: color,
+            backgroundColor: AppColors.border,
+            minHeight: 4,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            evidence.isEmpty
+                ? 'CV evidence: No matching sentence found.'
+                : 'CV evidence: “$evidence”',
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -375,6 +520,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
           minLines: 6,
           maxLines: 14,
           maxLength: 100000,
+          onChanged: (_) => _scheduleSemanticMatch(),
           decoration: const InputDecoration(
             hintText:
                 'Paste your CV here. Include headings such as Education, Skills, Projects and Experience.',
@@ -393,6 +539,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
                     _name = 'Sample student CV';
                     _text.text = sampleCareerCv;
                   });
+                  _scheduleSemanticMatch();
                 },
           child: const Text('Use sample CV'),
         ),
@@ -403,6 +550,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
       ],
     ),
     _button('Analyse my CV', _analyse),
+    _semanticMatchCard(),
     _title('HR job requirements'),
     Text(
       '${_jobs.length} requirements saved on this device. Use these to test CV matching, or browse current vacancies.',
@@ -449,6 +597,7 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
       'Your CV is ready',
       'Skills, education, experience, projects and certifications — from your document.',
     ),
+    _semanticMatchCard(),
     for (final section in _profile!.sections.entries)
       _card(
         ExpansionTile(

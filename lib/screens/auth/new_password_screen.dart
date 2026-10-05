@@ -10,6 +10,8 @@ class NewPasswordScreen extends StatefulWidget {
 
 class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool isSuccessState = false;
+  bool _showPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,21 +59,44 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               const SizedBox(height: 36),
 
               TextField(
-                obscureText: true,
-                decoration: const InputDecoration(
+                obscureText: !_showPassword,
+                decoration: InputDecoration(
                   hintText: 'New Password',
-                  prefixIcon: Icon(Icons.lock_outline, size: 20),
-                  suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    tooltip: _showPassword ? 'Hide password' : 'Show password',
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
+                    icon: Icon(
+                      _showPassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               TextField(
-                obscureText: true,
-                decoration: const InputDecoration(
+                obscureText: !_showConfirmPassword,
+                decoration: InputDecoration(
                   hintText: 'Confirm Password',
-                  prefixIcon: Icon(Icons.lock_outline, size: 20),
-                  suffixIcon: Icon(Icons.visibility_off_outlined, size: 20),
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  suffixIcon: IconButton(
+                    tooltip: _showConfirmPassword
+                        ? 'Hide password'
+                        : 'Show password',
+                    onPressed: () => setState(
+                      () => _showConfirmPassword = !_showConfirmPassword,
+                    ),
+                    icon: Icon(
+                      _showConfirmPassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 36),

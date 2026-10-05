@@ -93,6 +93,75 @@ class _RecruitmentWorkspaceScreenState
     _aiSummary = null;
   }
 
+  Map<String, dynamic>? get _selectedRequirement => _savedRequirements
+      .where((entry) => entry['id'] == _selectedId)
+      .firstOrNull;
+
+  Future<void> _removeSelectedRequirement() async {
+    final selected = _selectedRequirement;
+    if (selected == null ||
+        (selected['ownerId'] != widget.accountId &&
+            selected['sample'] != true)) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove saved requirements?'),
+        content: Text(
+          '“${selected['title']}” will be removed from this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      await _store.removeRequirements(
+        selected['id'] as String,
+        widget.accountId,
+      );
+      final saved = await _store.requirements();
+      if (!mounted) return;
+      setState(() {
+        _savedRequirements = saved;
+        if (saved.isEmpty) {
+          _selectedId = null;
+          _requirements.clear();
+          _role.clear();
+          _company.clear();
+          _requirementName = '';
+        } else {
+          _select(saved.first);
+        }
+        _message =
+            'Saved requirements removed. CV matching will refresh when you return.';
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _message =
+              'Could not remove the saved requirements. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _import(bool cv) async {
     setState(() {
       _busy = true;
@@ -578,6 +647,14 @@ class _RecruitmentWorkspaceScreenState
         child: const Text('Start a new requirements brief'),
       ),
     ],
+    if (_selectedRequirement != null &&
+        (_selectedRequirement!['ownerId'] == widget.accountId ||
+            _selectedRequirement!['sample'] == true))
+      TextButton.icon(
+        onPressed: _busy ? null : _removeSelectedRequirement,
+        icon: const Icon(Icons.delete_outline),
+        label: const Text('Remove saved requirements'),
+      ),
     const SizedBox(height: 12),
     OutlinedButton(
       onPressed: () => setState(() => _tab = 2),

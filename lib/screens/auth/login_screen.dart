@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _showPassword = false;
   String? _passwordError;
 
   @override
@@ -179,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 10),
                         TextField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: !_showPassword,
                           onChanged: (_) {
                             if (_passwordError != null) {
                               setState(() => _passwordError = null);
@@ -188,6 +189,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
                             fillColor: Colors.white,
+                            suffixIcon: IconButton(
+                              tooltip: _showPassword
+                                  ? 'Hide password'
+                                  : 'Show password',
+                              onPressed: () => setState(
+                                () => _showPassword = !_showPassword,
+                              ),
+                              icon: Icon(
+                                _showPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20,
+                              ),
+                            ),
                             error: _passwordError == null
                                 ? null
                                 : Padding(
