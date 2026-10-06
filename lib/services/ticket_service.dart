@@ -47,6 +47,39 @@ class TicketEvent {
   }
 }
 
+/// A student-submitted event waiting for an administrator's approval.
+class TicketEventSuggestion {
+  const TicketEventSuggestion({
+    required this.id,
+    required this.title,
+    required this.details,
+    required this.price,
+    required this.imageUrl,
+    required this.submitterEmail,
+  });
+
+  final String id;
+  final String title;
+  final String details;
+  final String price;
+  final String imageUrl;
+  final String submitterEmail;
+
+  static TicketEventSuggestion fromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    return TicketEventSuggestion(
+      id: doc.id,
+      title: (data['title'] ?? 'Untitled event').toString(),
+      details: (data['details'] ?? '').toString(),
+      price: (data['price'] ?? '').toString(),
+      imageUrl: (data['imageUrl'] ?? '').toString(),
+      submitterEmail: (data['submitterEmail'] ?? '').toString(),
+    );
+  }
+}
+
 /// Reads and writes the campus events students buy tickets for.
 ///
 /// Reading is open to any signed-in student; writing is admin-only. As
@@ -57,6 +90,7 @@ class TicketService {
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
 
   static const collection = 'tickets';
+  static const suggestionsCollection = 'eventSubmissions';
 
   /// Field limits, kept in step with the tickets rules in firestore.rules.
   static const titleLimit = 150;
@@ -154,6 +188,67 @@ class TicketService {
       });
       return events;
     });
+  }
+
+  /// Student suggestions are visible only to admins until approved.
+  static Stream<List<TicketEventSuggestion>> watchSuggestions() => _db
+      .collection(suggestionsCollection)
+      .orderBy('submittedAt', descending: true)
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs.map(TicketEventSuggestion.fromDoc).toList(),
+      );
+
+  static Future<void> submitSuggestion({
+    required String title,
+    required String details,
+    required String price,
+    required String imageUrl,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw StateError('Sign in before suggesting an event.');
+    final problem = validationError(
+      title: title,
+      details: details,
+      price: price,
+      imageUrl: imageUrl,
+    );
+    if (problem != null) throw StateError(problem);
+    await _db.collection(suggestionsCollection).add({
+      'title': title.trim(),
+      'details': details.trim(),
+      'price': price.trim(),
+      'imageUrl': imageUrl.trim(),
+      'submitterUid': user.uid,
+      'submitterEmail': user.email ?? '',
+      'submittedAt': FieldValue.serverTimestamp(),
+      'status': 'pending',
+    });
+  }
+
+  /// Publishes an approved suggestion and removes it from the review queue
+  /// atomically, so it cannot be lost between the two writes.
+  static Future<void> approveSuggestion(
+    TicketEventSuggestion suggestion,
+  ) async {
+    _requireAdmin();
+    final batch = _db.batch();
+    final ticket = _db.collection(collection).doc();
+    batch.set(ticket, {
+      'title': suggestion.title,
+      'details': suggestion.details,
+      'price': suggestion.price,
+      'imageUrl': suggestion.imageUrl,
+      'postedBy': suggestion.submitterEmail,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    batch.delete(_db.collection(suggestionsCollection).doc(suggestion.id));
+    await batch.commit();
+  }
+
+  static Future<void> rejectSuggestion(String id) async {
+    _requireAdmin();
+    await _db.collection(suggestionsCollection).doc(id).delete();
   }
 
   /// Publishes an event. Admins only.

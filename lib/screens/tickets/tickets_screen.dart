@@ -25,13 +25,20 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }
 
   Future<void> _addEvent() async {
+    final isAdmin = AuthService.isCurrentUserAdmin();
     final published = await showDialog<bool>(
       context: context,
-      builder: (_) => const _AddTicketDialog(),
+      builder: (_) => _AddTicketDialog(isAdmin: isAdmin),
     );
     if (!mounted || published != true) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Event added to Campus Tickets.')),
+      SnackBar(
+        content: Text(
+          isAdmin
+              ? 'Event added to Campus Tickets.'
+              : 'Event sent to admins for approval.',
+        ),
+      ),
     );
   }
 
@@ -69,17 +76,19 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   else ...[
                     _secureBanner(),
                     const SizedBox(height: 16),
-                    if (AuthService.isCurrentUserAdmin()) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _addEvent,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add tickets'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _addEvent,
+                        icon: const Icon(Icons.add),
+                        label: Text(
+                          AuthService.isCurrentUserAdmin()
+                              ? 'Add tickets'
+                              : 'Suggest an event',
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ],
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       'Upcoming events',
                       style: TextStyle(
@@ -338,7 +347,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
 }
 
 class _AddTicketDialog extends StatefulWidget {
-  const _AddTicketDialog();
+  const _AddTicketDialog({required this.isAdmin});
+
+  final bool isAdmin;
 
   @override
   State<_AddTicketDialog> createState() => _AddTicketDialogState();
@@ -377,12 +388,21 @@ class _AddTicketDialogState extends State<_AddTicketDialog> {
       _error = null;
     });
     try {
-      await TicketService.create(
-        title: _title.text,
-        details: _details.text,
-        price: _price.text,
-        imageUrl: _imageUrl.text,
-      );
+      if (widget.isAdmin) {
+        await TicketService.create(
+          title: _title.text,
+          details: _details.text,
+          price: _price.text,
+          imageUrl: _imageUrl.text,
+        );
+      } else {
+        await TicketService.submitSuggestion(
+          title: _title.text,
+          details: _details.text,
+          price: _price.text,
+          imageUrl: _imageUrl.text,
+        );
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
@@ -401,7 +421,7 @@ class _AddTicketDialogState extends State<_AddTicketDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Add a campus event'),
+    title: Text(widget.isAdmin ? 'Add a campus event' : 'Suggest an event'),
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -441,7 +461,13 @@ class _AddTicketDialogState extends State<_AddTicketDialog> {
       ),
       FilledButton(
         onPressed: _saving ? null : _save,
-        child: Text(_saving ? 'Adding...' : 'Add event'),
+        child: Text(
+          _saving
+              ? 'Saving...'
+              : widget.isAdmin
+              ? 'Add event'
+              : 'Send for approval',
+        ),
       ),
     ],
   );

@@ -514,7 +514,7 @@ class _ModerationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 5,
+    length: 6,
     child: Column(
       children: [
         const Material(
@@ -530,6 +530,7 @@ class _ModerationTab extends StatelessWidget {
               Tab(text: 'Notes'),
               Tab(text: 'Jobs'),
               Tab(text: 'Tickets'),
+              Tab(text: 'Event Suggestions'),
               Tab(text: 'Feedback'),
             ],
           ),
@@ -553,6 +554,7 @@ class _ModerationTab extends StatelessWidget {
                 icon: Icons.work_outline,
               ),
               const _TicketsModeration(),
+              const _EventSuggestionsModeration(),
               _ModerationList(
                 stream: AdminService.watchFeedback,
                 emptyText: 'No feedback has been submitted yet.',
@@ -604,6 +606,111 @@ class _TicketsModeration extends StatelessWidget {
         ),
       ),
     ),
+  );
+}
+
+/// Student event suggestions stay private until an admin publishes them.
+class _EventSuggestionsModeration extends StatelessWidget {
+  const _EventSuggestionsModeration();
+
+  Future<void> _approve(
+    BuildContext context,
+    TicketEventSuggestion suggestion,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await TicketService.approveSuggestion(suggestion);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Event approved and published.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not approve this event. Retry.')),
+      );
+    }
+  }
+
+  Future<void> _reject(
+    BuildContext context,
+    TicketEventSuggestion suggestion,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await TicketService.rejectSuggestion(suggestion.id);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Event suggestion removed.')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove this suggestion. Retry.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) => StreamBuilder<List<TicketEventSuggestion>>(
+    stream: TicketService.watchSuggestions(),
+    builder: (context, snapshot) {
+      if (snapshot.hasError) {
+        return const Center(child: Text('Could not load event suggestions.'));
+      }
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      final suggestions = snapshot.data!;
+      if (suggestions.isEmpty) {
+        return const Center(child: Text('No student event suggestions yet.'));
+      }
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: suggestions.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final suggestion = suggestions[index];
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    suggestion.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('${suggestion.details} · ${suggestion.price}'),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Suggested by ${suggestion.submitterEmail}',
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _reject(context, suggestion),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Reject'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () => _approve(context, suggestion),
+                        icon: const Icon(Icons.check),
+                        label: const Text('Approve and publish'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
   );
 }
 

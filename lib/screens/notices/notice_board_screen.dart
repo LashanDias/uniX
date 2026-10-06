@@ -95,13 +95,16 @@ class _NoticeBoardScreenState extends State<NoticeBoardScreen> {
           child: StreamBuilder<List<Notice>>(
             stream: _stream,
             builder: (context, snapshot) {
-              // A blank board is worse than a stale one, so fall back to the
-              // sample notices when Firestore cannot be reached.
               final failed = snapshot.hasError;
-              final notices = failed || !snapshot.hasData
+              final hasNoLiveNotices =
+                  snapshot.hasData && snapshot.data!.isEmpty;
+              final usingSamples =
+                  failed || !snapshot.hasData || hasNoLiveNotices;
+              // Keep the board useful before the first notice is published,
+              // and if Firestore is temporarily unavailable.
+              final notices = usingSamples
                   ? NoticeBoardService.sampleNotices()
                   : NoticeBoardService.sortForBoard(snapshot.data!);
-              final usingSamples = failed || !snapshot.hasData;
               final visible = _visible(notices);
 
               return ListView(
@@ -157,7 +160,9 @@ class _NoticeBoardScreenState extends State<NoticeBoardScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
                         failed
-                            ? 'Live notices could not load. Showing samples.'
+                            ? 'Live notices could not load. Showing sample notices.'
+                            : hasNoLiveNotices
+                            ? 'No live notices yet. Showing sample notices.'
                             : 'Loading notices...',
                         style: const TextStyle(
                           fontSize: 12,

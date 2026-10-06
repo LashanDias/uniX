@@ -88,8 +88,7 @@ class Notice {
       body: (data['body'] ?? '').toString(),
       category: (data['category'] ?? 'General').toString(),
       postedBy: (data['postedBy'] ?? 'Campus admin').toString(),
-      postedAt:
-          (data['postedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      postedAt: (data['postedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       pinned: data['pinned'] == true,
       imageUrl: (data['imageUrl'] ?? '').toString(),
       caption: (data['caption'] ?? '').toString(),
@@ -116,7 +115,8 @@ class NoticeBoardService {
       Notice(
         id: 'sample-1',
         title: 'Semester 2 results released',
-        body: 'Results are now on the student portal. Raise any query with '
+        body:
+            'Results are now on the student portal. Raise any query with '
             'your department within 14 days.',
         category: 'Exams',
         postedBy: 'Examinations Office',
@@ -130,7 +130,8 @@ class NoticeBoardService {
       Notice(
         id: 'sample-2',
         title: 'Library open late during study week',
-        body: 'The library stays open until midnight from Monday to Friday '
+        body:
+            'The library stays open until midnight from Monday to Friday '
             'for the whole of study week.',
         category: 'Facilities',
         postedBy: 'Library',
@@ -143,7 +144,8 @@ class NoticeBoardService {
       Notice(
         id: 'sample-3',
         title: 'Tech Society hackathon, Saturday',
-        body: 'Teams of up to four. Register at the Tech Society desk before '
+        body:
+            'Teams of up to four. Register at the Tech Society desk before '
             'Friday noon. Food provided.',
         category: 'Events',
         postedBy: 'Tech Society',
@@ -156,7 +158,8 @@ class NoticeBoardService {
       Notice(
         id: 'sample-4',
         title: 'Hostel maintenance on Sunday',
-        body: 'Water will be off in HUB 02 between 9am and 1pm on Sunday for '
+        body:
+            'Water will be off in HUB 02 between 9am and 1pm on Sunday for '
             'tank cleaning.',
         category: 'Facilities',
         postedBy: 'Hostel Warden',
@@ -170,7 +173,13 @@ class NoticeBoardService {
       .collection(collection)
       .orderBy('postedAt', descending: true)
       .snapshots()
-      .map((snapshot) => sortForBoard(snapshot.docs.map(Notice.fromDoc)));
+      // Keep older database records visible on the board too. Dated notices
+      // still get a "Finished" badge, but the board should not look empty
+      // just because every event date has passed.
+      .map(
+        (snapshot) =>
+            sortForBoard(snapshot.docs.map(Notice.fromDoc), includePast: true),
+      );
 
   /// Orders the board and drops events that have already happened.
   ///
