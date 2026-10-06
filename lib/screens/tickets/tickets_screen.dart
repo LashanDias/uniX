@@ -221,9 +221,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
     String title,
     String details,
     String price,
-    String imageUrl,
-    {bool sample = false, VoidCallback? onBuy},
-  ) => Card(
+    String imageUrl, {
+    bool sample = false,
+    VoidCallback? onBuy,
+  }) => Card(
     clipBehavior: Clip.antiAlias,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
