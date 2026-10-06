@@ -514,7 +514,7 @@ class _ModerationTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 4,
+    length: 5,
     child: Column(
       children: [
         const Material(
@@ -530,6 +530,7 @@ class _ModerationTab extends StatelessWidget {
               Tab(text: 'Notes'),
               Tab(text: 'Jobs'),
               Tab(text: 'Tickets'),
+              Tab(text: 'Feedback'),
             ],
           ),
         ),
@@ -552,6 +553,11 @@ class _ModerationTab extends StatelessWidget {
                 icon: Icons.work_outline,
               ),
               const _TicketsModeration(),
+              _ModerationList(
+                stream: AdminService.watchFeedback,
+                emptyText: 'No feedback has been submitted yet.',
+                icon: Icons.feedback_outlined,
+              ),
             ],
           ),
         ),
@@ -848,7 +854,9 @@ class _ModerationRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 item.subtitle,
-                maxLines: 1,
+                maxLines: item.collection == AdminService.feedbackCollection
+                    ? 4
+                    : 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 11,

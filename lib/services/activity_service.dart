@@ -33,7 +33,14 @@ class ActivityService {
   /// Collections to draw from: collection, timestamp field, title field,
   /// label, icon and the route to open.
   static const _sources = [
-    ('notes', 'createdAt', 'title', 'New note', Icons.note_add_outlined, '/notes'),
+    (
+      'notes',
+      'createdAt',
+      'title',
+      'New note',
+      Icons.note_add_outlined,
+      '/notes',
+    ),
     (
       'products',
       'createdAt',
@@ -75,6 +82,7 @@ class ActivityService {
     }
     final events = <ActivityEvent>[];
     final unreadable = <String>[];
+    final errorCodes = <String>[];
 
     await Future.wait([
       for (final (collection, timeField, titleField, label, icon, route)
@@ -89,7 +97,9 @@ class ActivityService {
                 for (final doc in snapshot.docs) {
                   final data = doc.data();
                   final at = (data[timeField] as Timestamp?)?.toDate();
-                  if (at == null) continue; // Write still pending on the server.
+                  if (at == null) {
+                    continue; // Write still pending on the server.
+                  }
                   final name = (data[titleField] ?? '').toString().trim();
                   events.add(
                     ActivityEvent(
@@ -101,7 +111,14 @@ class ActivityService {
                   );
                 }
               },
-              onError: (_) => unreadable.add(collection),
+              onError: (Object error) {
+                unreadable.add(collection);
+                errorCodes.add(
+                  error is FirebaseException
+                      ? error.code
+                      : error.runtimeType.toString(),
+                );
+              },
             ),
     ]);
 
@@ -109,6 +126,7 @@ class ActivityService {
     return ActivityFeed(
       events: events.take(limit).toList(),
       unreadable: unreadable,
+      errorCodes: errorCodes.toSet().toList(),
     );
   }
 
@@ -119,12 +137,19 @@ class ActivityService {
 
 /// The feed plus which sources could not be read.
 class ActivityFeed {
-  const ActivityFeed({required this.events, required this.unreadable});
+  const ActivityFeed({
+    required this.events,
+    required this.unreadable,
+    this.errorCodes = const [],
+  });
 
   final List<ActivityEvent> events;
 
   /// Collections that failed to load, by name. Empty when everything read.
   final List<String> unreadable;
+
+  /// Distinct Firebase error codes for failed collection reads.
+  final List<String> errorCodes;
 
   /// True when there is nothing to show *and* a source failed, which means
   /// "we could not look", not "nothing has happened".

@@ -26,6 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final emailController = TextEditingController();
   final birthdayController = TextEditingController();
   final yearController = TextEditingController();
+  final facultyController = TextEditingController();
   final districtController = TextEditingController();
 
   @override
@@ -42,6 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               : null;
           birthdayController.text = data['birthday'];
           yearController.text = data['year'];
+          facultyController.text = data['faculty']?.toString() ?? '';
           districtController.text = data['district'];
           setState(() {});
         })
@@ -62,6 +64,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     emailController.dispose();
     birthdayController.dispose();
     yearController.dispose();
+    facultyController.dispose();
     districtController.dispose();
     super.dispose();
   }
@@ -211,6 +214,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 14),
 
               TextField(
+                controller: facultyController,
+                decoration: const InputDecoration(hintText: 'Faculty'),
+              ),
+              const SizedBox(height: 14),
+
+              TextField(
                 controller: districtController,
                 decoration: const InputDecoration(hintText: 'District'),
               ),
@@ -251,6 +260,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             'role': selectedRole!,
                             'birthday': birthdayController.text,
                             'year': yearController.text,
+                            'faculty': facultyController.text,
                             'district': districtController.text,
                           }, profileImage);
                           if (!context.mounted) return;

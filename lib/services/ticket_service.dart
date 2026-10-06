@@ -98,7 +98,8 @@ class TicketService {
     return null;
   }
 
-  /// Every published event, newest first.
+  /// Every published event, newest first. Sorting locally includes older
+  /// events that were saved before the `createdAt` field was introduced.
   ///
   /// With no Firebase app configured this yields an empty list rather than
   /// throwing, so the screen shows its "no events" state instead of a red
@@ -106,11 +107,15 @@ class TicketService {
   /// everywhere else.
   static Stream<List<TicketEvent>> watch() {
     if (Firebase.apps.isEmpty) return Stream.value(const []);
-    return _db
-        .collection(collection)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map(TicketEvent.fromDoc).toList());
+    return _db.collection(collection).snapshots().map((snapshot) {
+      final events = snapshot.docs.map(TicketEvent.fromDoc).toList();
+      events.sort((a, b) {
+        final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate);
+      });
+      return events;
+    });
   }
 
   /// Publishes an event. Admins only.

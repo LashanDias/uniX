@@ -129,6 +129,27 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // App feedback: signed-in users submit their own reports; admins review
+    // and remove feedback from the admin moderation panel.
+    match /feedback/{id} {
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'userId', 'email', 'category', 'rating', 'message', 'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.category in ['Bug report', 'Idea', 'Other']
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 8
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.createdAt == request.time;
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
+
     // Campus event tickets: everyone signed in browses, only admins publish.
     // Delete is plain isAdmin() with no further condition, so an admin can
     // pull an event at any time -- including after it has been published and
@@ -281,13 +302,15 @@ service cloud.firestore {
       // Shape every profile write must satisfy, whoever makes it.
       function validProfile() {
         return request.resource.data.keys().hasOnly([
-            'name', 'email', 'role', 'birthday', 'year', 'district', 'image',
+            'name', 'email', 'role', 'birthday', 'year', 'faculty', 'district', 'image',
             'blocked', 'updatedAt'
           ])
           && request.resource.data.email == request.auth.token.email
           && request.resource.data.name is string
           && request.resource.data.name.size() <= 200
           && request.resource.data.role in ['Student', 'Recruiter']
+          && request.resource.data.get('faculty', '') is string
+          && request.resource.data.get('faculty', '').size() <= 200
           && (isSLTCUser() || isAdmin() || request.resource.data.role == 'Recruiter')
           && request.resource.data.updatedAt == request.time;
       }

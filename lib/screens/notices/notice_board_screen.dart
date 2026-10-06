@@ -88,13 +88,6 @@ class _NoticeBoardScreenState extends State<NoticeBoardScreen> {
       leading: const AppBackButton(),
       title: const Text('Notice Board'),
     ),
-    floatingActionButton: NoticeBoardService.canPost
-        ? FloatingActionButton.extended(
-            onPressed: _compose,
-            icon: const Icon(Icons.campaign_outlined),
-            label: const Text('Post notice'),
-          )
-        : null,
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -114,6 +107,17 @@ class _NoticeBoardScreenState extends State<NoticeBoardScreen> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
                 children: [
+                  if (NoticeBoardService.canPost) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _compose,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add notice'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     controller: _searchController,
                     onChanged: (value) => setState(() => _query = value),
@@ -183,8 +187,7 @@ class _NoticeBoardScreenState extends State<NoticeBoardScreen> {
                     for (final notice in visible)
                       _NoticeCard(
                         notice: notice,
-                        canRemove:
-                            NoticeBoardService.canPost && !usingSamples,
+                        canRemove: NoticeBoardService.canPost && !usingSamples,
                         onRemove: () => _remove(notice),
                       ),
                 ],
@@ -260,8 +263,7 @@ class _NoticeCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color:
-                    _categoryColours[notice.category] ?? AppColors.chipBg,
+                color: _categoryColours[notice.category] ?? AppColors.chipBg,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -280,7 +282,8 @@ class _NoticeCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: notice.urgency() == EventUrgency.today ||
+                  color:
+                      notice.urgency() == EventUrgency.today ||
                           notice.urgency() == EventUrgency.tomorrow
                       ? AppColors.badgeGreen
                       : AppColors.chipBg,
@@ -324,10 +327,7 @@ class _NoticeCard extends StatelessWidget {
               ),
             Text(
               notice.age,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textLight,
-              ),
+              style: const TextStyle(fontSize: 10, color: AppColors.textLight),
             ),
           ],
         ),
@@ -458,9 +458,8 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
                     labelText: 'Title',
                     hintText: 'Library open late during study week',
                   ),
-                  validator: (value) => (value ?? '').trim().isEmpty
-                      ? 'Enter a title.'
-                      : null,
+                  validator: (value) =>
+                      (value ?? '').trim().isEmpty ? 'Enter a title.' : null,
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -526,9 +525,7 @@ class _PostNoticeScreenState extends State<PostNoticeScreen> {
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _saving ? null : _submit,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                  ),
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                   child: Text(_saving ? 'Posting...' : 'Post notice'),
                 ),
               ],

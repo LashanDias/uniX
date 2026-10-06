@@ -23,8 +23,18 @@ String _savedDate(String? iso) {
   final saved = iso == null ? null : DateTime.tryParse(iso);
   if (saved == null) return 'Saved on this device';
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   return '${months[saved.month - 1]} ${saved.day}, ${saved.year}';
 }
@@ -523,13 +533,14 @@ class LostItemDetailScreen extends StatelessWidget {
   /// details is the thing that can actually be done with what is stored.
   Future<void> _copy(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final text = '''
+    final text =
+        '''
 ${type == 'found' ? 'Found' : 'Lost'}: $title
 Where: $location
 When: $date
 
 $description'''
-        .trim();
+            .trim();
     try {
       await Clipboard.setData(ClipboardData(text: text));
       messenger.showSnackBar(
@@ -669,24 +680,36 @@ $description'''
             const SizedBox(height: 14),
             const Text('Date', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(
-              date,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
+            Text(date, style: const TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _copy(context),
-              icon: const Icon(Icons.copy_all_outlined, size: 18),
-              label: const Text('Copy details to share'),
+            Center(
+              child: SizedBox(
+                width: 232,
+                height: 36,
+                child: ElevatedButton(
+                  onPressed: () => _copy(context),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(232, 36),
+                    maximumSize: const Size(232, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: const Text('Copy details to share'),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             Text(
               isMine
-                  ? 'This is your own report, so there is nobody to contact. '
-                        'Share the details in your batch group to spread it.'
-                  : 'Reports do not store a phone number or email, so the app '
-                        'cannot put you through to the owner. Copy the details '
-                        'and share them in your batch or hostel group.',
+                  ? 'This is your report. Share it in your batch group.'
+                  : 'No contact details are shared. Copy this report to share '
+                        'it in your batch or hostel group.',
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textLight,

@@ -6,17 +6,19 @@ import '../../services/activity_service.dart';
 import '../../widgets/dashboard_search.dart';
 import '../../core/utils/time_ago.dart';
 
-/// Sections in the Quick Access strip, in the order they are shown.
+/// Sections in the Quick Access grid, in the order they are shown.
 ///
 /// Each entry is (label, icon, icon colour, tile colour, what to open).
 final _quickAccess =
-    <(
-      String,
-      IconData,
-      Color,
-      Color,
-      void Function(BuildContext, void Function(int)),
-    )>[
+    <
+      (
+        String,
+        IconData,
+        Color,
+        Color,
+        void Function(BuildContext, void Function(int)),
+      )
+    >[
       (
         'Notes',
         Icons.assignment_outlined,
@@ -85,11 +87,25 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 600;
+            final horizontalPadding = isWide
+                ? (constraints.maxWidth * 0.045).clamp(28.0, 64.0).toDouble()
+                : 20.0;
+            final assistantImageSize =
+                (constraints.maxWidth * (isWide ? 0.12 : 0.2)).clamp(
+                  64.0,
+                  112.0,
+                ).toDouble();
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                isWide ? 24 : 12,
+                horizontalPadding,
+                isWide ? 32 : 24,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -195,9 +211,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  // AI Assistant card. This was lost when Quick Access became
-                  // a horizontal strip; it is the only entry point to the
-                  // assistant from the dashboard.
+                  // The dashboard's entry point to the AI assistant.
                   InkWell(
                     onTap: () =>
                         Navigator.pushNamed(context, '/ai_market_assistant'),
@@ -241,12 +255,11 @@ class DashboardScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Image.asset(
                             'assets/images/ai_bot.png',
-                            width: 86,
-                            height: 86,
+                            width: assistantImageSize,
+                            height: assistantImageSize,
                             fit: BoxFit.contain,
                             // A missing asset must not break the card.
-                            errorBuilder: (_, _, _) =>
-                                const SizedBox.shrink(),
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
                           ),
                         ],
                       ),
@@ -262,30 +275,36 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // A horizontal strip rather than a grid: it keeps the cards
-                  // big enough to read on a phone, and new sections can be
-                  // added without pushing everything else down the page.
-                  SizedBox(
-                    height: 168,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      itemCount: _quickAccess.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final item = _quickAccess[index];
-                        return SizedBox(
-                          width: 132,
-                          child: _buildQuickCard(
+                  LayoutBuilder(
+                    builder: (context, gridConstraints) {
+                      final columns = gridConstraints.maxWidth > 1100
+                          ? 4
+                          : gridConstraints.maxWidth > 600
+                          ? 3
+                          : 2;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _quickAccess.length,
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: columns,
+                              crossAxisSpacing: isWide ? 18 : 12,
+                              mainAxisSpacing: isWide ? 18 : 12,
+                              childAspectRatio: isWide ? 1.25 : 1.08,
+                            ),
+                        itemBuilder: (context, index) {
+                          final item = _quickAccess[index];
+                          return _buildQuickCard(
                             title: item.$1,
                             icon: item.$2,
                             iconColor: item.$3,
                             backgroundColor: item.$4,
                             onTap: () => item.$5(context, onNavigateTab),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -317,8 +336,8 @@ class DashboardScreen extends StatelessWidget {
                   const DashboardRecentActivity(),
                 ],
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -357,16 +376,25 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Container(
-                    width: 82,
-                    height: 82,
-                    decoration: BoxDecoration(
-                      color: backgroundColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: iconColor, size: 36),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final iconSize = constraints.maxHeight * 0.48;
+                    return Center(
+                      child: Container(
+                        width: iconSize,
+                        height: iconSize,
+                        decoration: BoxDecoration(
+                          color: backgroundColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          icon,
+                          color: iconColor,
+                          size: iconSize * 0.46,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -405,8 +433,20 @@ class DashboardRecentActivity extends StatefulWidget {
 }
 
 class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
-  late final Future<ActivityFeed> _future =
-      (widget.loader ?? ActivityService.load)();
+  late Future<ActivityFeed> _future;
+
+  Future<ActivityFeed> _load() => (widget.loader ?? ActivityService.load)();
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  void _retry() {
+    final next = _load();
+    setState(() => _future = next);
+  }
 
   @override
   Widget build(BuildContext context) => FutureBuilder<ActivityFeed>(
@@ -418,70 +458,75 @@ class _DashboardRecentActivityState extends State<DashboardRecentActivity> {
       // "Nothing has happened yet" was shown whether the feed was empty or
       // simply unreadable, which told a student the wrong thing when their
       // reads were denied or they were offline.
-      final couldNotLook =
-          snapshot.hasError || (feed?.failedEntirely ?? false);
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x140F172A),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              latest?.icon ??
-                  (couldNotLook
-                      ? Icons.cloud_off_outlined
-                      : Icons.history_outlined),
-              color: AppColors.primary,
-              size: 26,
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    latest?.title ??
-                        (snapshot.connectionState == ConnectionState.waiting
-                            ? 'Loading activity...'
-                            : couldNotLook
-                            ? 'Could not load activity'
-                            : 'Nothing has happened yet'),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    latest != null
-                        ? timeAgo(latest.happenedAt)
-                        : couldNotLook
-                        ? 'Tap to retry.'
-                        : 'Upload a note or post an item to get started.',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+      final couldNotLook = snapshot.hasError || (feed?.failedEntirely ?? false);
+      final errorCodes = feed?.errorCodes ?? const <String>[];
+      return GestureDetector(
+        onTap: couldNotLook ? _retry : null,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x140F172A),
+                blurRadius: 12,
+                offset: Offset(0, 4),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                latest?.icon ??
+                    (couldNotLook
+                        ? Icons.cloud_off_outlined
+                        : Icons.history_outlined),
+                color: AppColors.primary,
+                size: 26,
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      latest?.title ??
+                          (snapshot.connectionState == ConnectionState.waiting
+                              ? 'Loading activity...'
+                              : couldNotLook
+                              ? 'Could not load activity'
+                              : 'Nothing has happened yet'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      latest != null
+                          ? timeAgo(latest.happenedAt)
+                          : couldNotLook
+                          ? errorCodes.isEmpty
+                                ? 'Tap to retry.'
+                                : 'Tap to retry | ${errorCodes.join(', ')}'
+                          : 'Upload a note or post an item to get started.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     },

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'career_flow_screen.dart';
 
 class JobsHomeScreen extends StatelessWidget {
-  const JobsHomeScreen({super.key});
+  const JobsHomeScreen({super.key, this.onExitToHome});
+
+  final VoidCallback? onExitToHome;
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -11,6 +14,7 @@ class JobsHomeScreen extends StatelessWidget {
       accountId: user?.uid ?? 'guest',
       profileName: user?.displayName ?? '',
       profileEmail: user?.email ?? '',
+      onExitToHome: onExitToHome,
     );
   }
 }

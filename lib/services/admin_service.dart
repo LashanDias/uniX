@@ -97,6 +97,7 @@ class AdminService {
   static const notesCollection = 'notes';
   static const jobsCollection = 'jobs';
   static const ticketsCollection = 'tickets';
+  static const feedbackCollection = 'feedback';
 
   static bool get isAdmin => AuthService.isCurrentUserAdmin();
 
@@ -212,6 +213,28 @@ class AdminService {
                 if (price.isNotEmpty) price,
               ].where((part) => part.isNotEmpty).join('  •  '),
               ownerLabel: (data['postedBy'] ?? '').toString(),
+            );
+          }).toList(),
+        );
+  }
+
+  /// User feedback submitted from the app, newest first.
+  static Stream<List<ModeratedItem>> watchFeedback() {
+    _requireAdmin();
+    return _db
+        .collection(feedbackCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+            final rating = (data['rating'] as num?)?.toInt() ?? 0;
+            return ModeratedItem(
+              id: doc.id,
+              collection: feedbackCollection,
+              title: '${(data['category'] ?? 'Feedback')} · $rating/5',
+              subtitle: (data['message'] ?? '').toString(),
+              ownerLabel: (data['email'] ?? '').toString(),
             );
           }).toList(),
         );

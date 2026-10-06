@@ -18,9 +18,11 @@ class CareerFlowScreen extends StatefulWidget {
     this.profileName = '',
     this.profileEmail = '',
     this.pickDocument,
+    this.onExitToHome,
   });
   final String accountId, profileName, profileEmail;
   final Future<RecruitmentDocument?> Function()? pickDocument;
+  final VoidCallback? onExitToHome;
   @override
   State<CareerFlowScreen> createState() => _CareerFlowScreenState();
 }
@@ -357,8 +359,12 @@ class _CareerFlowScreenState extends State<CareerFlowScreen> {
                         : () {
                             if (_step > 0) {
                               _go(_step - 1);
+                            } else if (widget.onExitToHome != null) {
+                              widget.onExitToHome!();
+                            } else if (Navigator.of(context).canPop()) {
+                              Navigator.pop(context);
                             } else {
-                              Navigator.maybePop(context);
+                              Navigator.pushReplacementNamed(context, '/main');
                             }
                           },
                     icon: const Icon(Icons.arrow_back),

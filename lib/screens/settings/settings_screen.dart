@@ -109,6 +109,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.pushNamed(context, '/notifications'),
                   ),
                   _LinkTile(
+                    icon: Icons.feedback_outlined,
+                    title: 'Send feedback',
+                    onTap: () => Navigator.pushNamed(context, '/feedback'),
+                  ),
+                  _LinkTile(
                     icon: Icons.logout,
                     title: 'Sign out',
                     danger: true,

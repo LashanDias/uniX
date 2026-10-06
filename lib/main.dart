@@ -22,6 +22,7 @@ import 'screens/notes/short_notes_screen.dart';
 import 'screens/notes/reference_sheet_screen.dart';
 import 'screens/notices/notice_board_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'screens/feedback/feedback_screen.dart';
 import 'screens/notes/note_detail_screen.dart';
 import 'screens/marketplace/marketplace_screen.dart';
 import 'screens/marketplace/add_product_screen.dart';
@@ -97,6 +98,8 @@ class UnixApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const NoticeBoardScreen());
           case '/settings':
             return MaterialPageRoute(builder: (_) => const SettingsScreen());
+          case '/feedback':
+            return MaterialPageRoute(builder: (_) => const FeedbackScreen());
           case '/formula_sheets':
             return MaterialPageRoute(
               builder: (_) => const ReferenceSheetsScreen(),

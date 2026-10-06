@@ -21,6 +21,7 @@ class ProfileStorage {
       'role': 'Student',
       'birthday': '',
       'year': '',
+      'faculty': '',
       'district': '',
       'image': user.photoURL,
       ...?snapshot.data(),
@@ -61,7 +62,14 @@ class ProfileStorage {
       imageUrl = await ref.getDownloadURL();
     }
     await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-      for (final key in ['name', 'role', 'birthday', 'year', 'district'])
+      for (final key in [
+        'name',
+        'role',
+        'birthday',
+        'year',
+        'faculty',
+        'district',
+      ])
         if (values.containsKey(key)) key: values[key]!.trim(),
       'email': user.email,
       'image': ?imageUrl,

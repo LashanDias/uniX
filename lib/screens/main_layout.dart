@@ -28,14 +28,14 @@ class _MainLayoutState extends State<MainLayout> {
       DashboardScreen(onNavigateTab: _onTabSelected),
       const NotesHomeScreen(),
       const MarketplaceScreen(),
-      const JobsHomeScreen(),
+      JobsHomeScreen(onExitToHome: () => _onTabSelected(0)),
       const ProfileScreen(),
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
+      extendBody: false,
+      body: SafeArea(
+        child: IndexedStack(index: _currentIndex, children: screens),
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
