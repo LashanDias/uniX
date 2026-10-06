@@ -15,6 +15,7 @@ class TicketsScreen extends StatefulWidget {
 
 class _TicketsScreenState extends State<TicketsScreen> {
   bool _wallet = false;
+  TicketEvent? _selectedEvent;
   late Stream<List<TicketEvent>> _events;
 
   @override
@@ -63,77 +64,94 @@ class _TicketsScreenState extends State<TicketsScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-          if (_wallet)
-            _ticketCard()
-          else ...[
-            _secureBanner(),
-            const SizedBox(height: 16),
-            if (AuthService.isCurrentUserAdmin()) ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _addEvent,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add tickets'),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-                  const Text(
-                    'Upcoming events',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-            // The two events here used to be written into this file, so no
-            // admin could add one and none could ever be removed. They now
-            // come from Firestore, which is what lets an admin pull an event
-            // at any time from the Tickets tab of the admin panel.
-            StreamBuilder<List<TicketEvent>>(
-              stream: _events,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return _TicketsMessage(
-                    icon: Icons.cloud_off_outlined,
-                    text: _eventLoadError(snapshot.error),
-                    action: FilledButton.icon(
-                      onPressed: _retryLoading,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  );
-                }
-                if (!snapshot.hasData) {
-                  return const Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final events = snapshot.data!;
-                if (events.isEmpty) {
-                  return _TicketsMessage(
-                    icon: Icons.confirmation_number_outlined,
-                    text: AuthService.isCurrentUserAdmin()
-                        ? 'No events yet. Add an event above to put tickets on sale.'
-                        : 'No events are on sale right now. Check back soon.',
-                  );
-                }
-                return Column(
-                  children: [
-                    for (final event in events) ...[
-                      _eventCard(
-                        event.title,
-                        event.details,
-                        event.price,
-                        event.imageUrl,
+                  if (_wallet)
+                    _ticketCard()
+                  else ...[
+                    _secureBanner(),
+                    const SizedBox(height: 16),
+                    if (AuthService.isCurrentUserAdmin()) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _addEvent,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add tickets'),
+                        ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                     ],
+                    const Text(
+                      'Upcoming events',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // The two events here used to be written into this file, so no
+                    // admin could add one and none could ever be removed. They now
+                    // come from Firestore, which is what lets an admin pull an event
+                    // at any time from the Tickets tab of the admin panel.
+                    StreamBuilder<List<TicketEvent>>(
+                      stream: _events,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Column(
+                            children: [
+                              _TicketsMessage(
+                                icon: Icons.cloud_off_outlined,
+                                text: _eventLoadError(snapshot.error),
+                                action: FilledButton.icon(
+                                  onPressed: _retryLoading,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Retry'),
+                                ),
+                              ),
+                              _sampleEventsPreview(),
+                            ],
+                          );
+                        }
+                        if (!snapshot.hasData) {
+                          return const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        final events = snapshot.data!;
+                        if (events.isEmpty) {
+                          return Column(
+                            children: [
+                              _TicketsMessage(
+                                icon: Icons.confirmation_number_outlined,
+                                text: AuthService.isCurrentUserAdmin()
+                                    ? 'No live events yet. Add an event above to put tickets on sale.'
+                                    : 'No live events are on sale right now.',
+                              ),
+                              _sampleEventsPreview(),
+                            ],
+                          );
+                        }
+                        return Column(
+                          children: [
+                            for (final event in events) ...[
+                              _eventCard(
+                                event.title,
+                                event.details,
+                                event.price,
+                                event.imageUrl,
+                                onBuy: () => setState(() {
+                                  _selectedEvent = event;
+                                  _wallet = true;
+                                }),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
                   ],
-                );
-              },
-            ),
-          ],
-        ],
+                ],
               ),
             ),
           );
@@ -176,11 +194,35 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return 'Could not load events. Retry or check your connection.';
   }
 
+  Widget _sampleEventsPreview() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const Padding(
+        padding: EdgeInsets.only(top: 8, bottom: 12),
+        child: Text(
+          'Sample events',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
+      for (final event in TicketService.sampleEvents()) ...[
+        _eventCard(
+          event.title,
+          event.details,
+          event.price,
+          event.imageUrl,
+          sample: true,
+        ),
+        const SizedBox(height: 14),
+      ],
+    ],
+  );
+
   Widget _eventCard(
     String title,
     String details,
     String price,
     String imageUrl,
+    {bool sample = false, VoidCallback? onBuy},
   ) => Card(
     clipBehavior: Clip.antiAlias,
     child: Column(
@@ -211,6 +253,13 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ],
               ),
+              if (sample) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Preview only · sample event',
+                  style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                ),
+              ],
               const SizedBox(height: 12),
               Text(
                 title,
@@ -241,8 +290,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     ),
                   ),
                   FilledButton(
-                    onPressed: () => setState(() => _wallet = true),
-                    child: const Text('Buy ticket'),
+                    onPressed: sample ? null : onBuy,
+                    child: Text(sample ? 'Preview only' : 'Buy ticket'),
                   ),
                 ],
               ),
@@ -258,16 +307,30 @@ class _TicketsScreenState extends State<TicketsScreen> {
       color: AppColors.primary,
       borderRadius: BorderRadius.circular(24),
     ),
-    child: const Column(
+    child: Column(
       children: [
         Text(
-          'TALENT NIGHT 2026',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          _selectedEvent?.title ?? 'Select an event to view its ticket',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        SizedBox(height: 18),
-        Icon(Icons.qr_code_2, color: Colors.white, size: 180),
-        SizedBox(height: 12),
-        Text('Scan QR to Enter', style: TextStyle(color: Colors.white70)),
+        if (_selectedEvent != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _selectedEvent!.details,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+        const SizedBox(height: 18),
+        const Icon(Icons.qr_code_2, color: Colors.white, size: 180),
+        const SizedBox(height: 12),
+        const Text(
+          'Ticket preview · payment is not connected yet',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white70),
+        ),
       ],
     ),
   );

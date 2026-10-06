@@ -64,6 +64,44 @@ class TicketService {
   static const priceLimit = 40;
   static const imageUrlLimit = 500;
 
+  /// Preview events keep the page useful before an admin publishes live
+  /// events or while Firestore cannot be reached. These are never written to
+  /// Firestore and must not be treated as purchasable tickets.
+  static List<TicketEvent> sampleEvents() => const [
+    TicketEvent(
+      id: 'sample-campus-music-night',
+      title: 'Campus Music Night',
+      details: 'Oct 24, 2026 · Main Auditorium',
+      price: 'LKR 500',
+      imageUrl: '',
+      postedBy: 'Campus Events',
+    ),
+    TicketEvent(
+      id: 'sample-interfaculty-sports',
+      title: 'Inter-Faculty Sports Festival',
+      details: 'Nov 7, 2026 · University Sports Grounds',
+      price: 'Free',
+      imageUrl: '',
+      postedBy: 'Sports Council',
+    ),
+    TicketEvent(
+      id: 'sample-career-tech-expo',
+      title: 'Career and Technology Expo',
+      details: 'Nov 19, 2026 · Innovation Hub',
+      price: 'Free',
+      imageUrl: '',
+      postedBy: 'Career Services',
+    ),
+    TicketEvent(
+      id: 'sample-international-food-fair',
+      title: 'International Food Fair',
+      details: 'Dec 3, 2026 · Central Courtyard',
+      price: 'LKR 300',
+      imageUrl: '',
+      postedBy: 'Student Union',
+    ),
+  ];
+
   static void _requireAdmin() {
     if (!AuthService.isCurrentUserAdmin()) {
       throw StateError('Sign in with an approved admin account to do this.');
